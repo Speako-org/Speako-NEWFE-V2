@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { FlatList, Text, TouchableOpacity, View } from 'react-native';
 import { AntDesign } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -12,23 +11,20 @@ type RecordType = {
 
 interface RecordProps {
   records: RecordType[];
+  selectedDate: Date;
+  onDateChange: (date: Date) => void;
 }
 
-export default function RecordDate({ records }: RecordProps) {
+export default function RecordDate({ records, selectedDate, onDateChange }: RecordProps) {
   const router = useRouter();
-  const [selectedDate, setSelectedDate] = useState(new Date());
 
   const changeDate = (days: number) => {
-    setSelectedDate((prevDate) => {
-      const newDate = new Date(prevDate);
-      newDate.setDate(newDate.getDate() + days);
-      return newDate;
-    });
+    const newDate = new Date(selectedDate);
+    newDate.setDate(newDate.getDate() + days);
+    onDateChange(newDate);
   };
 
   const formattedSelectedDate = selectedDate.toISOString().split('T')[0];
-
-  const filteredRecords = records.filter((record) => record.date === formattedSelectedDate);
 
   const today = new Date();
   const formattedToday = today.toISOString().split('T')[0];
@@ -37,7 +33,7 @@ export default function RecordDate({ records }: RecordProps) {
   const handleRecordPress = (record: RecordType) => {
     router.push({
       pathname: '/(protected)/record-detail',
-      params: { record: JSON.stringify(record) },
+      params: { id: record.id },
     });
   };
 
@@ -60,12 +56,12 @@ export default function RecordDate({ records }: RecordProps) {
 
       {/* 기록 리스트 */}
       <FlatList
-        data={filteredRecords}
+        data={records}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <TouchableOpacity onPress={() => handleRecordPress(item)}>
-            <View className="mx-[15px] gap-[3px] py-[13px]">
-              <Text className="pb-[1px] text-[16px] font-bold">{item.title}</Text>
+            <View className="mx-[15px] flex-row items-center justify-between py-[20px]">
+              <Text className="text-[16px] font-bold">{item.title}</Text>
               <Text className="text-[14px] text-[#777]">{item.duration}</Text>
             </View>
             <View className="mx-[10px] h-[1px] bg-[#eee]" />
