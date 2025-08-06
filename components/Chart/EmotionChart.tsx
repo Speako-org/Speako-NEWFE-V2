@@ -1,5 +1,4 @@
-import { View, Text, Pressable, Dimensions } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { View, Text, Dimensions } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 import { useState, useEffect } from 'react';
 
@@ -31,30 +30,42 @@ const EmotionChart = () => {
         data: [80, 40, 60, 20, 0],
         color: (opacity = 1) => `rgba(160, 136, 224, ${opacity})`,
         strokeWidth: 2,
+        strokeColor: 'rgba(160, 136, 224, 1)',
+        fillColor: 'rgba(160, 136, 224, 1)',
       },
       {
         data: [20, 60, 40, 80, 100],
         color: (opacity = 1) => `rgba(255, 146, 138, ${opacity})`,
         strokeWidth: 2,
+        strokeColor: '#FF928A',
+        fillColor: '#FF928A',
       },
     ],
     legend: [],
   };
 
   return (
-    <View className="mx-[20px]">
+    <View className="">
       {/* Header */}
-      <View className="mb-[15px] flex-row items-center justify-between pt-7">
-        <Text className="text-[18px] font-bold text-black">주간 감정 변화</Text>
-        <Pressable className="flex-row items-center pr-2.5">
-          <Text className="mr-1.5 text-[14px] text-gray-500">최근 5개월</Text>
-          <Ionicons name="chevron-down" size={16} color="#666" />
-        </Pressable>
+      <View className="mb-[15px] flex-row items-center justify-between px-1 pt-6">
+        <Text className="mx-[10px] text-[18px] font-bold text-black">언어 습관 그래프</Text>
+      </View>
+
+      {/* Legend */}
+      <View className="mb-0 flex-row justify-end">
+        <View className=" flex-row items-center">
+          <View className="mr-1.5 h-2 w-2 rounded-full bg-[#A088E0]" />
+          <Text className="text-[12px] text-gray-500">긍정적 표현</Text>
+        </View>
+        <View className="mx-2.5 flex-row items-center">
+          <View className="mr-1.5 h-2 w-2 rounded-full bg-[#FF928A]" />
+          <Text className="text-[12px] text-gray-500">부정적 표현</Text>
+        </View>
       </View>
 
       {/* Chart Box */}
       <View
-        className="elevation-3 rounded-[15px] bg-white px-4 pb-[20px] shadow-sm"
+        className="pb-[10px]"
         style={{
           minHeight: 250,
           alignItems: 'center',
@@ -72,6 +83,11 @@ const EmotionChart = () => {
             color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
             style: {
               borderRadius: 12,
+              shadowColor: 'transparent',
+              shadowOffset: { width: 0, height: 0 },
+              shadowOpacity: 0,
+              shadowRadius: 0,
+              elevation: 0,
             },
             propsForDots: {
               r: '4',
@@ -103,24 +119,7 @@ const EmotionChart = () => {
           yAxisSuffix=""
           segments={5}
           yAxisInterval={1}
-          getDotColor={(dataPoint, index) => {
-            if (index === 0) return 'rgba(160, 136, 224, 1)';
-            if (index === 1) return 'rgba(255, 146, 138, 1)';
-            return 'rgba(160, 136, 224, 1)';
-          }}
         />
-      </View>
-
-      {/* Legend */}
-      <View className="mt-2.5 flex-row justify-end">
-        <View className="mx-2.5 flex-row items-center">
-          <View className="mr-1.5 h-2 w-2 rounded-full bg-[#A088E0]" />
-          <Text className="text-[12px] text-gray-500">긍정적 표현</Text>
-        </View>
-        <View className="mx-2.5 flex-row items-center">
-          <View className="mr-1.5 h-2 w-2 rounded-full bg-[#FF928A]" />
-          <Text className="text-[12px] text-gray-500">부정적 표현</Text>
-        </View>
       </View>
     </View>
   );
