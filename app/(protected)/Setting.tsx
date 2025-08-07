@@ -1,12 +1,62 @@
-import { Text, View, ScrollView, TouchableOpacity, Switch, Alert } from 'react-native';
+import { Text, View, ScrollView, TouchableOpacity, Switch, Alert, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
 
 export default function Setting() {
   const router = useRouter();
 
   const handleBack = () => {
     router.back();
+  };
+
+  const handleLogout = async () => {
+    Alert.alert('로그아웃', '로그아웃을 하시겠습니까?', [
+      { text: '취소', style: 'cancel' },
+      {
+        text: '확인',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            if (Platform.OS === 'web') {
+              // 웹 환경에서 모든 토큰 삭제
+              localStorage.removeItem('accessToken');
+              sessionStorage.removeItem('accessToken');
+              localStorage.removeItem('rememberMe');
+              localStorage.removeItem('userEmail');
+
+              // 쿠키 삭제
+              document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+
+              console.log('웹 환경 로그아웃 완료');
+            } else {
+              // 모바일 환경에서 모든 토큰 삭제
+              try {
+                await SecureStore.deleteItemAsync('accessToken');
+                await SecureStore.deleteItemAsync('rememberMe');
+                await SecureStore.deleteItemAsync('userEmail');
+                console.log('모바일 환경 로그아웃 완료');
+              } catch (error) {
+                console.log('SecureStore 삭제 실패:', error);
+                // 대안: localStorage 사용
+                if (typeof window !== 'undefined') {
+                  localStorage.removeItem('accessToken');
+                  localStorage.removeItem('rememberMe');
+                  localStorage.removeItem('userEmail');
+                }
+              }
+            }
+
+            // 로그인 화면으로 이동
+            router.replace({ pathname: '/(public)/login' });
+          } catch (error) {
+            console.log('로그아웃 중 오류:', error);
+            // 오류가 발생해도 로그인 화면으로 이동
+            router.replace({ pathname: '/(public)/login' });
+          }
+        },
+      },
+    ]);
   };
 
   return (
@@ -126,16 +176,7 @@ export default function Setting() {
         {/* 로그아웃 */}
         <TouchableOpacity
           className="flex-row items-center gap-[6px] px-[5px] py-[10px]"
-          onPress={() => {
-            Alert.alert('로그아웃', '로그아웃을 하시겠습니까?', [
-              { text: '취소', style: 'cancel' },
-              {
-                text: '확인',
-                style: 'destructive',
-                onPress: () => router.replace({ pathname: '/(public)/login' }),
-              },
-            ]);
-          }}>
+          onPress={handleLogout}>
           <Ionicons name="log-out-outline" size={16} color="#e53935" />
           <Text className="text-[16px] font-semibold text-[#e53935]">로그아웃</Text>
         </TouchableOpacity>
