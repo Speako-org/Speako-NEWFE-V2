@@ -60,12 +60,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   plugins: [
     'expo-router',
-    [
-      'expo-dev-launcher',
-      {
-        launchMode: 'most-recent',
-      },
-    ],
   ],
   experiments: {
     typedRoutes: true,

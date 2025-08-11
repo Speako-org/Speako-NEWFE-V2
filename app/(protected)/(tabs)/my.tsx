@@ -16,7 +16,7 @@ const Mypage = () => {
         className={`flex-1 items-center justify-center rounded-lg py-2 ${activeTab === 'stats' ? 'bg-black' : ''}`}
         onPress={() => setActiveTab('stats')}>
         <Text
-          className={`text-center text-base font-medium ${activeTab === 'stats' ? 'text-white' : 'text-gray-600'}`}>
+          className={`text-center text-base font-medium ${activeTab === 'stats' ? 'font-extrabold text-white' : 'text-gray-600'}`}>
           통계
         </Text>
       </TouchableOpacity>
@@ -24,7 +24,7 @@ const Mypage = () => {
         className={`flex-1 items-center justify-center rounded-lg py-2 ${activeTab === 'progress' ? 'bg-black' : ''}`}
         onPress={() => setActiveTab('progress')}>
         <Text
-          className={`text-center text-base font-medium ${activeTab === 'progress' ? 'text-white' : 'text-gray-600'}`}>
+          className={`text-center text-base font-medium ${activeTab === 'progress' ? 'font-extrabold text-white' : 'text-gray-600'}`}>
           진행도
         </Text>
       </TouchableOpacity>
@@ -32,7 +32,7 @@ const Mypage = () => {
         className={`flex-1 items-center justify-center rounded-lg py-2 ${activeTab === 'achievement' ? 'bg-black' : ''}`}
         onPress={() => setActiveTab('achievement')}>
         <Text
-          className={`text-center text-base font-medium ${activeTab === 'achievement' ? 'text-white' : 'text-gray-600'}`}>
+          className={`text-center text-base font-medium ${activeTab === 'achievement' ? 'font-extrabold text-white' : 'text-gray-600'}`}>
           성과
         </Text>
       </TouchableOpacity>

@@ -135,7 +135,7 @@ const LoginScreen = () => {
       console.log('Redirecting to Kakao login...');
 
       window.location.href = loginUrl;
-    } catch (error) {
+    } catch {
       console.log('Kakao login error');
       Alert.alert('오류', '로그인 중 문제가 발생했습니다.');
     } finally {
