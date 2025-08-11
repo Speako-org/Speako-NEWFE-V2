@@ -4,11 +4,60 @@ import { useRouter } from 'expo-router';
 import EmotionChart from '../../../components/Chart/EmotionChart';
 import Achievement from '../../../components/Achievement';
 import Challenge from '../../../components/Challenge';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import * as SecureStore from 'expo-secure-store';
+
+interface Achievement {
+  nickname: string;
+  profileImageUrl: string;
+  mainBadgeName: string;
+  selfComment: string;
+  totalRecordedDays: number;
+  avgPositiveRatio: number;
+  badgeAcquisitionRate: number;
+}
+
+interface MonthlyStat {
+  year: number;
+  month: number;
+  avgPositiveRatio: number;
+  avgNegativeRatio: number;
+  maxStreak: number;
+}
 
 const Mypage = () => {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'stats' | 'progress' | 'achievement'>('stats');
+  const [profileData, setProfileData] = useState<Achievement | null>(null);
+  const [monthlyStats, setMonthlyStats] = useState<MonthlyStat[] | null>(null);
+
+  const BASE_URL = 'https://speako.site/api';
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const accessToken = await SecureStore.getItemAsync('accessToken');
+        const res = await fetch(`${BASE_URL}/users-info/mypage`, {
+          method: 'GET',
+          headers: {
+            accept: '*/*',
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        const json = await res.json();
+        setProfileData(json.result.achievement);
+        setMonthlyStats(json.result.monthlyStats);
+      } catch (error) {
+        console.error('데이터 불러오기 실패:', error);
+      }
+    };
+
+    fetchProfile();
+  }, []);
 
   const renderTabBar = () => (
     <View className="mx-[20px] mb-3 flex-row rounded-lg bg-gray-100 p-1">
@@ -43,14 +92,17 @@ const Mypage = () => {
     <View>
       {/* 월간 성과 박스 */}
       <View className="mx-[20px] mb-[15px] rounded-[10px] bg-white p-[15px]">
-        <Text className="mb-3 p-3 text-xl font-bold">월간 성과</Text>
+        <Text className="mb-3 p-3 text-xl font-bold">이번 달 성과</Text>
         <View className="flex-row justify-between">
           <View className="mx-1 flex-1 items-center rounded-lg bg-purple-50 p-5">
-            <Text className="mb-1 text-3xl font-bold  text-[#5196E2]">85%</Text>
+            <Text className="mb-1 text-3xl font-bold text-[#5196E2]">
+              {' '}
+              {((monthlyStats?.[0]?.avgPositiveRatio ?? 0) * 100).toFixed(0)}%
+            </Text>
             <Text className="text-center text-sm text-gray-600">긍정 표현 사용률</Text>
           </View>
           <View className="mx-1 flex-1 items-center rounded-lg bg-purple-50 p-5">
-            <Text className="mb-1 text-3xl font-bold">32</Text>
+            <Text className="mb-1 text-3xl font-bold">{monthlyStats?.[0]?.maxStreak}</Text>
             <Text className="text-center text-sm text-gray-600">연속 기록일 수</Text>
           </View>
         </View>
@@ -69,7 +121,7 @@ const Mypage = () => {
 
   return (
     <ScrollView
-      className="flex-1 pt-[60px]"
+      className="flex-1 pt-[80px]"
       contentContainerStyle={{ paddingBottom: 150 }}
       showsVerticalScrollIndicator={true}>
       {/* Header */}
@@ -87,18 +139,24 @@ const Mypage = () => {
         {/* Profile Info */}
         <View className="mb-5 flex-row items-center">
           <Image
-            source={require('../../../assets/default-profile.png')}
+            source={
+              profileData?.profileImageUrl
+                ? { uri: profileData.profileImageUrl }
+                : require('../../../assets/default-profile.png')
+            }
             className="mr-[15px] h-[60px] w-[60px] rounded-full"
           />
           <View className="flex-1">
             <View className="mb-2 flex-row items-center">
-              <Text className="mr-[5px] text-[18px] font-bold text-black">박은지</Text>
+              <Text className="mr-[5px] text-[18px] font-bold text-black">
+                {profileData?.nickname}
+              </Text>
               <Text className="rounded-full bg-[#eadeff] px-2 py-1 text-[9px] font-bold text-[#8953e0]">
-                긍정 마스터
+                {profileData?.mainBadgeName}
               </Text>
             </View>
             <Text className="text-[13px] font-semibold text-gray-500">
-              매일 긍정적인 표현을 연습하며 성장중입니다.
+              {profileData?.selfComment}
             </Text>
           </View>
         </View>
@@ -106,15 +164,21 @@ const Mypage = () => {
         {/* Stats */}
         <View className="mb-[20px] mt-[10px] flex-row justify-between">
           <View className="flex-1 items-center">
-            <Text className="mb-[5px] text-[18px] font-bold text-black">42</Text>
+            <Text className="mb-[5px] text-[18px] font-bold text-black">
+              {profileData?.totalRecordedDays}
+            </Text>
             <Text className="text-[14px] font-semibold text-gray-500">기록 횟수</Text>
           </View>
           <View className="flex-1 items-center">
-            <Text className="mb-[5px] text-[18px] font-bold text-black">56%</Text>
+            <Text className="mb-[5px] text-[18px] font-bold text-black">
+              {((profileData?.avgPositiveRatio ?? 0) * 100).toFixed(0)}%
+            </Text>
             <Text className="text-[14px] font-semibold text-gray-500">긍정 표현</Text>
           </View>
           <View className="flex-1 items-center">
-            <Text className="mb-[5px] text-[18px] font-bold text-[#A088E0]">+65%</Text>
+            <Text className="mb-[5px] text-[18px] font-bold text-[#A088E0]">
+              +{((profileData?.badgeAcquisitionRate ?? 0) * 100).toFixed(0)}%
+            </Text>
             <Text className="text-[14px] font-semibold text-gray-500">개선율</Text>
           </View>
         </View>
