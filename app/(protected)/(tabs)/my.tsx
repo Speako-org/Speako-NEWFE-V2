@@ -17,10 +17,19 @@ interface Achievement {
   badgeAcquisitionRate: number;
 }
 
+interface MonthlyStat {
+  year: number;
+  month: number;
+  avgPositiveRatio: number;
+  avgNegativeRatio: number;
+  maxStreak: number;
+}
+
 const Mypage = () => {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'stats' | 'progress' | 'achievement'>('stats');
   const [profileData, setProfileData] = useState<Achievement | null>(null);
+  const [monthlyStats, setMonthlyStats] = useState<MonthlyStat[] | null>(null);
 
   const BASE_URL = 'https://speako.site/api';
 
@@ -41,6 +50,7 @@ const Mypage = () => {
         }
         const json = await res.json();
         setProfileData(json.result.achievement);
+        setMonthlyStats(json.result.monthlyStats);
       } catch (error) {
         console.error('데이터 불러오기 실패:', error);
       }
@@ -82,14 +92,17 @@ const Mypage = () => {
     <View>
       {/* 월간 성과 박스 */}
       <View className="mx-[20px] mb-[15px] rounded-[10px] bg-white p-[15px]">
-        <Text className="mb-3 p-3 text-xl font-bold">월간 성과</Text>
+        <Text className="mb-3 p-3 text-xl font-bold">이번 달 성과</Text>
         <View className="flex-row justify-between">
           <View className="mx-1 flex-1 items-center rounded-lg bg-purple-50 p-5">
-            <Text className="mb-1 text-3xl font-bold  text-[#5196E2]">85%</Text>
+            <Text className="mb-1 text-3xl font-bold text-[#5196E2]">
+              {' '}
+              {((monthlyStats?.[0]?.avgPositiveRatio ?? 0) * 100).toFixed(0)}%
+            </Text>
             <Text className="text-center text-sm text-gray-600">긍정 표현 사용률</Text>
           </View>
           <View className="mx-1 flex-1 items-center rounded-lg bg-purple-50 p-5">
-            <Text className="mb-1 text-3xl font-bold">32</Text>
+            <Text className="mb-1 text-3xl font-bold">{monthlyStats?.[0]?.maxStreak}</Text>
             <Text className="text-center text-sm text-gray-600">연속 기록일 수</Text>
           </View>
         </View>
@@ -108,7 +121,7 @@ const Mypage = () => {
 
   return (
     <ScrollView
-      className="flex-1 pt-[60px]"
+      className="flex-1 pt-[80px]"
       contentContainerStyle={{ paddingBottom: 150 }}
       showsVerticalScrollIndicator={true}>
       {/* Header */}
