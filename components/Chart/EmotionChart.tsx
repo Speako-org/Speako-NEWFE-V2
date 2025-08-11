@@ -1,9 +1,46 @@
 import { View, Text, Dimensions } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 import { useState, useEffect } from 'react';
+import * as SecureStore from 'expo-secure-store';
+
+interface MonthlyStat {
+  year: number;
+  month: number;
+  avgPositiveRatio: number;
+  avgNegativeRatio: number;
+  maxStreak: number;
+}
 
 const EmotionChart = () => {
   const [screenWidth, setScreenWidth] = useState(Dimensions.get('window').width);
+  const [monthlyStats, setMonthlyStats] = useState<MonthlyStat[] | null>(null);
+
+  const BASE_URL = 'https://speako.site/api';
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const accessToken = await SecureStore.getItemAsync('accessToken');
+        const res = await fetch(`${BASE_URL}/users-info/mypage`, {
+          method: 'GET',
+          headers: {
+            accept: '*/*',
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        const json = await res.json();
+        setMonthlyStats(json.result.monthlyStats);
+      } catch (error) {
+        console.error('데이터 불러오기 실패:', error);
+      }
+    };
+
+    fetchProfile();
+  }, []);
 
   useEffect(() => {
     const updateDimensions = () => {
@@ -19,30 +56,56 @@ const EmotionChart = () => {
     };
   }, []);
 
-  // 차트가 항상 표시되도록 안정적인 너비 설정
+  // 차트 너비 설정
   const chartWidth = Math.max(screenWidth - 40, 300);
+  const safeStats = monthlyStats ?? [];
+  const reversedStats = [...safeStats].reverse();
 
-  // 차트 데이터
+  // 10단위 반올림
+  const roundToNearest10 = (num: number) => Math.round(num / 10) * 10;
+
+  const adjustedPositive = reversedStats.map((stat) =>
+    roundToNearest10(stat.avgPositiveRatio * 100)
+  );
+
+  const adjustedNegative = reversedStats.map((stat) =>
+    roundToNearest10(stat.avgNegativeRatio * 100)
+  );
+
+  const maxDataValue = 100;
+
+  const dataPositiveWithMax = [...adjustedPositive];
+  if (Math.max(...adjustedPositive) < maxDataValue) {
+    dataPositiveWithMax.push(maxDataValue);
+  }
+
+  const dataNegativeWithMax = [...adjustedNegative];
+  if (Math.max(...adjustedNegative) < maxDataValue) {
+    dataNegativeWithMax.push(maxDataValue);
+  }
+
   const chartData = {
-    labels: ['1월', '2월', '3월', '4월', '5월'],
+    labels: [...reversedStats.map((stat) => `${stat.month}월`), ''],
     datasets: [
       {
-        data: [80, 40, 60, 20, 0],
+        data: dataPositiveWithMax,
         color: (opacity = 1) => `rgba(160, 136, 224, ${opacity})`,
         strokeWidth: 2,
-        strokeColor: 'rgba(160, 136, 224, 1)',
-        fillColor: 'rgba(160, 136, 224, 1)',
       },
       {
-        data: [20, 60, 40, 80, 100],
+        data: dataNegativeWithMax,
         color: (opacity = 1) => `rgba(255, 146, 138, ${opacity})`,
         strokeWidth: 2,
-        strokeColor: '#FF928A',
-        fillColor: '#FF928A',
       },
     ],
     legend: [],
   };
+
+  reversedStats.forEach((stat, idx) => {
+    console.log(
+      `월: ${stat.month}월, positive: ${stat.avgPositiveRatio * 100}, negative: ${stat.avgNegativeRatio * 100}`
+    );
+  });
 
   return (
     <View className="">
@@ -75,6 +138,7 @@ const EmotionChart = () => {
           data={chartData}
           width={chartWidth}
           height={250}
+          fromZero={true}
           chartConfig={{
             backgroundColor: '#fff',
             backgroundGradientFrom: '#fff',
@@ -103,7 +167,12 @@ const EmotionChart = () => {
             backgroundGradientFromOpacity: 0,
             backgroundGradientToOpacity: 0,
             paddingRight: 50,
-            paddingTop: 50,
+            paddingTop: 40,
+          }}
+          formatYLabel={(yValue) => {
+            const allowed = [0, 20, 40, 60, 80, 100];
+            const num = Number(yValue);
+            return allowed.includes(num) ? yValue : '';
           }}
           withHorizontalLines={false}
           withVerticalLines={false}
@@ -112,13 +181,12 @@ const EmotionChart = () => {
           bezier={false}
           onDataPointClick={() => {}}
           style={{
-            marginVertical: 4,
+            marginVertical: 0,
             borderRadius: 12,
+            paddingLeft: 15,
           }}
-          fromZero={true}
           yAxisSuffix=""
           segments={5}
-          yAxisInterval={1}
         />
       </View>
     </View>
