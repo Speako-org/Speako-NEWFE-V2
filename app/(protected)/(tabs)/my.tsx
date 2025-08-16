@@ -1,56 +1,34 @@
 import { View, Text, TouchableOpacity, Image, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import EmotionChart from '../../../components/Chart/EmotionChart';
-import Achievement from '../../../components/Achievement';
-import Challenge from '../../../components/Challenge';
+import EmotionChart from '../../../components/mypage/Chart/EmotionChart';
+import Achievement from '../../../components/mypage/Achievement';
+import Challenge from '../../../components/mypage/Challenge';
+import TabBar from '../../../components/mypage/TabBar';
 import { useState, useEffect } from 'react';
-import * as SecureStore from 'expo-secure-store';
-
-interface Achievement {
-  nickname: string;
-  profileImageUrl: string;
-  mainBadgeName: string;
-  selfComment: string;
-  totalRecordedDays: number;
-  avgPositiveRatio: number;
-  badgeAcquisitionRate: number;
-}
-
-interface MonthlyStat {
-  year: number;
-  month: number;
-  avgPositiveRatio: number;
-  avgNegativeRatio: number;
-  maxStreak: number;
-}
+import {
+  myPageApi,
+  Achievement as AchievementType,
+  MonthlyStat,
+} from '../../../api/types/statistic';
 
 const Mypage = () => {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'stats' | 'progress' | 'achievement'>('stats');
-  const [profileData, setProfileData] = useState<Achievement | null>(null);
+  const [profileData, setProfileData] = useState<AchievementType | null>(null);
   const [monthlyStats, setMonthlyStats] = useState<MonthlyStat[] | null>(null);
-
-  const BASE_URL = 'https://speako.site/api';
 
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const accessToken = await SecureStore.getItemAsync('accessToken');
-        const res = await fetch(`${BASE_URL}/users-info/mypage`, {
-          method: 'GET',
-          headers: {
-            accept: '*/*',
-            Authorization: `Bearer ${accessToken}`,
-          },
-        });
+        const response = await myPageApi.getMyPageInfo();
 
-        if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`);
+        if (response.isSuccess && response.result) {
+          setProfileData(response.result.achievement);
+          setMonthlyStats(response.result.monthlyStats);
+        } else {
+          console.error('마이페이지 데이터 로드 실패:', response.message);
         }
-        const json = await res.json();
-        setProfileData(json.result.achievement);
-        setMonthlyStats(json.result.monthlyStats);
       } catch (error) {
         console.error('데이터 불러오기 실패:', error);
       }
@@ -59,40 +37,15 @@ const Mypage = () => {
     fetchProfile();
   }, []);
 
-  const renderTabBar = () => (
-    <View className="mx-[20px] mb-3 flex-row rounded-lg bg-gray-100 p-1">
-      <TouchableOpacity
-        className={`flex-1 items-center justify-center rounded-lg py-2 ${activeTab === 'stats' ? 'bg-black' : ''}`}
-        onPress={() => setActiveTab('stats')}>
-        <Text
-          className={`text-center text-base font-medium ${activeTab === 'stats' ? 'font-extrabold text-white' : 'text-gray-600'}`}>
-          통계
-        </Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        className={`flex-1 items-center justify-center rounded-lg py-2 ${activeTab === 'progress' ? 'bg-black' : ''}`}
-        onPress={() => setActiveTab('progress')}>
-        <Text
-          className={`text-center text-base font-medium ${activeTab === 'progress' ? 'font-extrabold text-white' : 'text-gray-600'}`}>
-          진행도
-        </Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        className={`flex-1 items-center justify-center rounded-lg py-2 ${activeTab === 'achievement' ? 'bg-black' : ''}`}
-        onPress={() => setActiveTab('achievement')}>
-        <Text
-          className={`text-center text-base font-medium ${activeTab === 'achievement' ? 'font-extrabold text-white' : 'text-gray-600'}`}>
-          성과
-        </Text>
-      </TouchableOpacity>
-    </View>
-  );
+  const handleTabPress = (tab: 'stats' | 'progress' | 'achievement') => {
+    setActiveTab(tab);
+  };
 
   const renderStatsContent = () => (
     <View>
       {/* 월간 성과 박스 */}
       <View className="mx-[20px] mb-[15px] rounded-[10px] bg-white p-[15px]">
-        <Text className="mb-3 p-3 text-xl font-bold">이번 달 성과</Text>
+        <Text className="mb-3 p-3 text-xl font-bold">월간 성과</Text>
         <View className="flex-row justify-between">
           <View className="mx-1 flex-1 items-center rounded-lg bg-purple-50 p-5">
             <Text className="mb-1 text-3xl font-bold text-[#5196E2]">
@@ -185,7 +138,7 @@ const Mypage = () => {
       </View>
 
       {/* Tab Bar */}
-      {renderTabBar()}
+      <TabBar activeTab={activeTab} onTabPress={handleTabPress} />
 
       {/* Tab Content */}
       {activeTab === 'stats' && renderStatsContent()}

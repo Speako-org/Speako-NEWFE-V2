@@ -1,39 +1,22 @@
+import { useState, useEffect } from 'react';
 import { View, Text, Dimensions } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
-import { useState, useEffect } from 'react';
-import * as SecureStore from 'expo-secure-store';
-
-interface MonthlyStat {
-  year: number;
-  month: number;
-  avgPositiveRatio: number;
-  avgNegativeRatio: number;
-  maxStreak: number;
-}
+import { myPageApi, MonthlyStat } from '../../../api/types/statistic';
 
 const EmotionChart = () => {
+  const [monthlyStats, setMonthlyStats] = useState<MonthlyStat[]>([]);
   const [screenWidth, setScreenWidth] = useState(Dimensions.get('window').width);
-  const [monthlyStats, setMonthlyStats] = useState<MonthlyStat[] | null>(null);
-
-  const BASE_URL = 'https://speako.site/api';
 
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const accessToken = await SecureStore.getItemAsync('accessToken');
-        const res = await fetch(`${BASE_URL}/users-info/mypage`, {
-          method: 'GET',
-          headers: {
-            accept: '*/*',
-            Authorization: `Bearer ${accessToken}`,
-          },
-        });
+        const response = await myPageApi.getMyPageInfo();
 
-        if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`);
+        if (response.isSuccess && response.result) {
+          setMonthlyStats(response.result.monthlyStats);
+        } else {
+          console.error('마이페이지 데이터 로드 실패:', response.message);
         }
-        const json = await res.json();
-        setMonthlyStats(json.result.monthlyStats);
       } catch (error) {
         console.error('데이터 불러오기 실패:', error);
       }
