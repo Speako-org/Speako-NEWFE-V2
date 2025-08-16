@@ -2,6 +2,10 @@ language: 'ko-KR'
 
 # CodeRabbit 설정
 reviews:
+  auto: true
+  branches:
+    include:
+      - '*'
   profile: 'chill'
   request_changes_workflow: false
   high_level_summary: true
