@@ -1,0 +1,28 @@
+language: 'ko-KR'
+
+# CodeRabbit 설정
+reviews:
+  auto: true
+  branches:
+    include:
+      - '*'
+  profile: 'chill'
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: false
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches:
+      - '.*' # 모든 브랜치를 매치하는 정규식
+
+  locale: 'ko' # 리뷰와 요약을 한국어로 출력
+# 언어별 설정
+language_settings:
+  typescript:
+    enabled: true
+    strict_mode: true
+  javascript:
+    enabled: true
