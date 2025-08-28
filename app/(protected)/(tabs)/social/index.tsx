@@ -7,7 +7,7 @@ import PostCard from '../../../../components/Social/PostCard';
 import CommentModal from '../../../../components/Social/CommentModal';
 import ShareBadgeModal from '../../../../components/Social/ShareBadgeModal';
 import TabHeader from '../../../../components/Social/TabHeader';
-import FloatingActionButton from '../../../../components/Social/FAButton';
+import FAButton from '../../../../components/Social/FAButton';
 
 interface Badge {
   icon: string;
@@ -57,7 +57,7 @@ export default function SocialScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className="relative flex-1 bg-white">
       <View className="px-6 pb-6 pt-12">
         <Text className="mb-6 text-3xl font-bold">소셜</Text>
         <TabHeader activeTab={activeTab} setActiveTab={setActiveTab} />
@@ -99,7 +99,7 @@ export default function SocialScreen() {
         onSubmit={handleSubmitShare}
       />
 
-      <FloatingActionButton
+      <FAButton
         onPress={() => {
           if (!selectedBadge) {
             setSelectedBadge({
