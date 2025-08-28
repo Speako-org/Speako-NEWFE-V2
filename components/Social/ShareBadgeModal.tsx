@@ -1,6 +1,7 @@
 import { Modal, View, Text, TouchableOpacity, TextInput } from 'react-native';
 import { useState } from 'react';
 import Octicons from '@expo/vector-icons/Octicons';
+import BadgeCard from './BadgeCard';
 
 interface Badge {
   icon: string;
@@ -51,22 +52,13 @@ export default function ShareBadgeModal({
                 onChangeText={setContent}
               />
 
-              <View className="mt-6 flex rounded-lg bg-white p-4">
-                <Text className="mb-3 text-sm font-medium text-gray-800">획득한 뱃지</Text>
-                <View className="flex-row items-center">
-                  <View className="mr-4 h-12 w-12 items-center justify-center rounded-full border border-gray-200 bg-white">
-                    <Text className="text-2xl">{badge?.icon}</Text>
-                  </View>
-                  <View className="flex-1">
-                    <Text className="text-base font-bold text-gray-800">{badge?.title}</Text>
-                    <Text className="text-sm text-gray-600">{badge?.description}</Text>
-                  </View>
-                </View>
+              <View className="flex rounded-lg bg-white">
+                <BadgeCard badge={badge} />
               </View>
             </View>
 
             {/* 버튼 */}
-            <View className="flex-row space-x-3">
+            <View className="w-full flex-row space-x-3">
               <TouchableOpacity className="flex-1 rounded-lg py-1" onPress={onClose}>
                 <Text className="text-center text-lg font-bold text-[#888]">취소</Text>
               </TouchableOpacity>
