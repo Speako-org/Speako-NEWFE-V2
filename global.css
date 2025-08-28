@@ -7,7 +7,7 @@
 
 /* 기본 폰트 설정 */
 * {
-  font-family: 'Pretendard-Regular', 'Pretendard', system-ui, sans-serif;
+  font-family: 'Pretendard', system-ui, sans-serif;
 }
 
 /* 웹에서 React Native 이벤트 핸들러 경고 억제 */

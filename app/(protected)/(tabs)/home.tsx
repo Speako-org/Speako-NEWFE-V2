@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Alert, Text, View, TouchableOpacity } from 'react-native';
-import { Audio } from 'expo-av';
+import Audio from 'expo-audio';
 import { formatDateTime } from '../../../utils/formatDataTime';
 import { formatTime } from '../../../utils/formatTime';
 import RecordButton from '../../../components/RecordButton/RecordButton';
@@ -16,8 +16,8 @@ export default function Home() {
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const [recordedUri, setRecordedUri] = useState<string | null>(null);
   const [currentDateTime, setCurrentDateTime] = useState(new Date());
-  const [sound, setSound] = useState<Audio.Sound | null>(null);
-  const [recordingInstance, setRecordingInstance] = useState<Audio.Recording | null>(null);
+  const [sound, setSound] = useState<any>(null);
+  const [recordingInstance, setRecordingInstance] = useState<any>(null);
   const [recordId, setRecordId] = useState<number | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
