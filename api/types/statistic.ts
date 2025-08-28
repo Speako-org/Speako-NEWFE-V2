@@ -13,6 +13,7 @@ export interface Achievement {
   nickname: string;
   profileImageUrl: string;
   mainBadgeName: string;
+  mainBadgeId: number;
   selfComment: string;
   totalRecordedDays: number;
   avgPositiveRatio: number;

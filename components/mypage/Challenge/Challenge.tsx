@@ -1,4 +1,12 @@
-import { View, Text, RefreshControl, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  RefreshControl,
+  ScrollView,
+  TouchableOpacity,
+  Image,
+  Modal,
+} from 'react-native';
 import { useState, useEffect } from 'react';
 import { challengeApi, Challenge as ChallengeType } from '../../../api/types/challenge';
 
@@ -16,6 +24,8 @@ const Challenge = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showInfoModal, setShowInfoModal] = useState(false);
+  const [modalPosition, setModalPosition] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
     fetchChallenges();
@@ -92,8 +102,8 @@ const Challenge = () => {
     const percentage = total > 0 ? (progress / total) * 100 : 0;
     return (
       <View className="flex-row items-center">
-        <View className="mr-3 h-2 flex-1 rounded-full bg-gray-200">
-          <View className="h-2 rounded-full bg-[#c5d4ff]" style={{ width: `${percentage}%` }} />
+        <View className="mr-3 h-3 flex-1 rounded-full bg-gray-200">
+          <View className="h-3 rounded-full bg-[#c5d4ff]" style={{ width: `${percentage}%` }} />
         </View>
         <Text className="text-sm font-medium text-gray-600">
           {progress}/{total}
@@ -126,33 +136,89 @@ const Challenge = () => {
   }
 
   return (
-    <ScrollView
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-      className="mx-[20px] mb-[15px] rounded-[10px] bg-white p-[15px]">
-      <Text className="mb-4 p-3 text-xl font-bold">챌린지 달성 현황</Text>
-
-      {challenges.length === 0 ? (
-        <View className="items-center justify-center py-8">
-          <Text className="text-gray-500">진행 중인 챌린지가 없습니다.</Text>
+    <>
+      <ScrollView
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        className="mx-[20px] mb-[15px] rounded-[10px] bg-white p-[15px]">
+        <View className="mb-4 flex-row items-center p-3">
+          <Text className="text-xl font-bold">챌린지 달성 현황</Text>
+          <TouchableOpacity
+            onPress={(event) => {
+              const { pageY } = event.nativeEvent;
+              setModalPosition({ x: 0, y: pageY });
+              setShowInfoModal(true);
+            }}
+            className="ml-2 p-1">
+            <Image
+              source={require('../../../assets/information.png')}
+              style={{ width: 16, height: 16 }}
+              resizeMode="contain"
+            />
+          </TouchableOpacity>
         </View>
-      ) : (
-        challenges.map((challenge, index) => (
-          <View
-            key={index}
-            className="mb-4 flex-row items-center rounded-lg border border-gray-100 bg-white p-4">
-            <View className="flex-1">
-              <Text className="mb-1 text-lg font-bold text-gray-800">{challenge.title}</Text>
-              <Text className="text-m mb-3 text-gray-600">{challenge.description}</Text>
-              {renderProgressBar(challenge.progress, challenge.total)}
-            </View>
 
-            <View className="ml-4 h-12 w-12 items-center justify-center rounded-full">
-              <Text className="text-4xl">{challenge.icon}</Text>
-            </View>
+        {challenges.length === 0 ? (
+          <View className="items-center justify-center py-8">
+            <Text className="text-gray-500">진행 중인 챌린지가 없습니다.</Text>
           </View>
-        ))
-      )}
-    </ScrollView>
+        ) : (
+          challenges.map((challenge, index) => (
+            <View
+              key={index}
+              className="mb-4 flex-row items-center rounded-lg border border-gray-100 bg-white p-4"
+              style={{
+                shadowColor: '#000',
+                shadowOffset: {
+                  width: 0,
+                  height: 2,
+                },
+                shadowOpacity: 0.1,
+                shadowRadius: 3.84,
+                elevation: 5,
+              }}>
+              <View className="flex-1">
+                <Text className="mb-1 text-lg font-bold text-gray-800">{challenge.title}</Text>
+                <Text className="text-m mb-3 text-gray-600">{challenge.description}</Text>
+                {renderProgressBar(challenge.progress, challenge.total)}
+              </View>
+
+              <View className="ml-4 h-12 w-12 items-center justify-center rounded-full">
+                <Text className="text-4xl">{challenge.icon}</Text>
+              </View>
+            </View>
+          ))
+        )}
+      </ScrollView>
+
+      {/* 챌린지 정보 모달 */}
+      <Modal visible={showInfoModal} transparent={true} animationType="fade">
+        <View className="flex-1 bg-black/50">
+          <TouchableOpacity
+            className="flex-1"
+            activeOpacity={1}
+            onPress={() => setShowInfoModal(false)}>
+            <View
+              className="flex-1 items-end pr-[60px]"
+              style={{
+                paddingTop: Math.max(modalPosition.y - 130, 50),
+                paddingBottom: Math.max(100, 50),
+              }}>
+              <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()}>
+                <View className="w-90 rounded-xl border border-gray-300 bg-[#ffffff] p-5">
+                  <Text className="text-left text-sm text-gray-700">
+                    챌린지는 사용자의 목표 달성을 위한 도전 과제입니다.{'\n\n'}
+                    <Text className="text-base font-bold text-gray-800">
+                      각 챌린지를 완료하면 뱃지를 획득합니다.
+                    </Text>
+                    {'\n'}뱃지를 획득하여 개선율 또한 높여보세요! 👀
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </View>
+      </Modal>
+    </>
   );
 };
 
