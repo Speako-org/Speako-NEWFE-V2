@@ -165,17 +165,7 @@ const Challenge = () => {
           challenges.map((challenge, index) => (
             <View
               key={index}
-              className="mb-4 flex-row items-center rounded-lg border border-gray-100 bg-white p-4"
-              style={{
-                shadowColor: '#000',
-                shadowOffset: {
-                  width: 0,
-                  height: 2,
-                },
-                shadowOpacity: 0.1,
-                shadowRadius: 3.84,
-                elevation: 5,
-              }}>
+              className="mb-4 flex-row items-center rounded-lg border border-gray-200 bg-white p-4">
               <View className="flex-1">
                 <Text className="mb-1 text-lg font-bold text-gray-800">{challenge.title}</Text>
                 <Text className="text-m mb-3 text-gray-600">{challenge.description}</Text>

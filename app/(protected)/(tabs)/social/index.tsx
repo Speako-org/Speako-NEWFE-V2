@@ -40,7 +40,8 @@ export default function SocialScreen() {
       params.showShareModal === 'true' &&
       params.badgeIcon &&
       params.badgeTitle &&
-      params.badgeDescription
+      params.badgeDescription &&
+      !shareModalVisible // 모달이 이미 열려있지 않을 때만 열기
     ) {
       setSelectedBadge({
         icon: params.badgeIcon as string,
@@ -49,7 +50,13 @@ export default function SocialScreen() {
       });
       setShareModalVisible(true);
     }
-  }, [params]);
+  }, [
+    params.showShareModal,
+    params.badgeIcon,
+    params.badgeTitle,
+    params.badgeDescription,
+    shareModalVisible,
+  ]);
 
   const handleSubmitShare = () => {
     console.log('뱃지 공유 완료!');
