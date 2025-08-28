@@ -301,7 +301,7 @@ export default function SocialScreen() {
           onPress={() => setShareModalVisible(false)}>
           <View className="flex-1 items-center justify-center">
             <View className="mx-4 rounded-3xl bg-white p-5 shadow-lg" style={{ minWidth: 320 }}>
-              {/* Header */}
+              {/* 뱃지 공유 내용 헤더 */}
               <View className="mb-1 items-center">
                 <View className="flex-row items-center">
                   <Text className="pt-4 text-xl font-extrabold text-gray-800">
@@ -315,14 +315,14 @@ export default function SocialScreen() {
                 </View>
               </View>
 
-              {/* Description */}
+              {/* 뱃지 공유 내용 설명 */}
               <View className="mb-6 items-center">
                 <Text className="text-sm text-gray-600">
                   나의 성과를 소셜에 올려 사람들과 소통해보세요!
                 </Text>
               </View>
 
-              {/* Combined Section */}
+              {/* 뱃지 공유 내용 */}
               <View className="mb-6 rounded-lg border border-gray-200 bg-gray-100 px-3 py-4">
                 <Text className="text-m mb-2 font-medium text-gray-400">
                   이 뱃지를 얻기 위해 무슨 노력을 하셨나요?
@@ -345,10 +345,10 @@ export default function SocialScreen() {
                 </View>
               </View>
 
-              {/* Separator */}
+              {/* 구분선 */}
               <View className="mb-2 h-0.5 w-full bg-gray-300" />
 
-              {/* Buttons */}
+              {/* 뱃지 공유 내용 버튼 */}
               <View className="flex-row space-x-3">
                 <TouchableOpacity
                   className="flex-1 rounded-lg py-1"

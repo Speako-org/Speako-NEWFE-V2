@@ -37,7 +37,7 @@ const Challenge = () => {
         // API 응답을 컴포넌트에서 사용하는 형태로 변환
         const transformedChallenges: ChallengeItem[] = response.result.map(
           (challenge: ChallengeType, index: number) => ({
-            icon: getChallengeIcon(challenge.levelName),
+            icon: challenge.icon,
             title: challenge.challengeName,
             description: challenge.description,
             progress: challenge.currentAmount,
@@ -81,21 +81,6 @@ const Challenge = () => {
 
   const onRefresh = () => {
     fetchChallenges(true);
-  };
-
-  const getChallengeIcon = (levelName: string): string => {
-    switch (levelName.toLowerCase()) {
-      case 'beginner':
-        return '🌱';
-      case 'intermediate':
-        return '⭐️';
-      case 'advanced':
-        return '🏆';
-      case 'expert':
-        return '👑';
-      default:
-        return '🎯';
-    }
   };
 
   const getChallengeColor = (index: number): string => {
