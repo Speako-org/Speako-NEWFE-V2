@@ -1,8 +1,7 @@
-import { TouchableOpacity, View, Alert } from 'react-native';
+import { TouchableOpacity, View, Alert, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import LottieView from 'lottie-react-native';
-import recordingAnimation from '../../assets/recording.json';
-import { Audio } from 'expo-audio';
+import { Audio } from 'expo-av';
+import { LinearGradient } from 'expo-linear-gradient';
 
 interface RecordButtonProps {
   recording: boolean;
@@ -26,20 +25,41 @@ const RecordButton: React.FC<RecordButtonProps> = ({ recording, onStartRecord, o
 
   return (
     <TouchableOpacity onPress={handlePress}>
-      <View
-        className="elevation-4 h-[60px] w-[60px] items-center justify-center rounded-full bg-[#c2d2ff] shadow-sm"
-        style={{
-          shadowColor: '#000',
-          shadowOpacity: 0.3,
-          shadowOffset: { width: 0, height: 0 },
-          shadowRadius: 8,
-        }}>
-        {recording ? (
-          <LottieView source={recordingAnimation} autoPlay loop style={{ width: 80, height: 80 }} />
-        ) : (
-          <Ionicons name="mic-outline" size={30} color="#888" />
-        )}
-      </View>
+      {recording ? (
+        <Image
+          className="mt-[10px]"
+          source={require('../../assets/recording_on.png')}
+          style={{
+            width: 100,
+            height: 100,
+            resizeMode: 'contain',
+          }}
+        />
+      ) : (
+        <View
+          className="elevation-4 h-[80px] w-[100px] items-center justify-center rounded-full shadow-sm"
+          style={{
+            shadowColor: '#A088E0',
+            shadowOpacity: 0.5,
+            shadowOffset: { width: 0, height: 2 },
+            shadowRadius: 5,
+            elevation: 5,
+          }}>
+          <LinearGradient
+            colors={['#EADEFF', '#D0C4EF']}
+            style={{
+              width: '100%',
+              height: '100%',
+              borderRadius: 50,
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 999,
+              position: 'relative',
+            }}>
+            <Ionicons name="mic-outline" size={40} color="#ffffff" />
+          </LinearGradient>
+        </View>
+      )}
     </TouchableOpacity>
   );
 };
