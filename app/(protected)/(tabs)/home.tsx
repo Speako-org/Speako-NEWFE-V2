@@ -24,28 +24,6 @@ export default function Home() {
 
   const BASE_URL = 'https://speako.site/api';
 
-  const startPulseAnimation = () => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, {
-          toValue: 1.2,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulseAnim, {
-          toValue: 1,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-  };
-
-  const stopPulseAnimation = () => {
-    pulseAnim.stopAnimation();
-    pulseAnim.setValue(1);
-  };
-
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentDateTime(new Date());
@@ -164,16 +142,26 @@ export default function Home() {
   };
 
   useEffect(() => {
-    if (!recordingInstance) {
-      setRecording(false);
-    }
-  }, [recordingInstance]);
-
-  useEffect(() => {
     if (recording) {
-      startPulseAnimation();
+      // 애니메이션 시작
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1.2,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
     } else {
-      stopPulseAnimation();
+      // 애니메이션 중지
+      pulseAnim.stopAnimation();
+      pulseAnim.setValue(1);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recording]);

@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, Image, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
 import BadgeActionModal from '../../Modal/BadgeActionModal';
 import BadgeConfirmModal from '../../Modal/BadgeConfirmModal';
+import ShareBadgeModal from '../../Social/ShareBadgeModal';
 import { badgeApi, Badge as BadgeType } from '../../../api/types/badge';
 import { apiClient } from '../../../api/client';
 
@@ -36,6 +37,7 @@ const Achievement = ({ currentMainBadgeId, onBadgeUpdate }: AchievementProps) =>
   const [error, setError] = useState<string | null>(null);
   const [infoModalVisible, setInfoModalVisible] = useState(false);
   const [modalPosition, setModalPosition] = useState({ x: 0, y: 0 });
+  const [shareModalVisible, setShareModalVisible] = useState(false);
   useEffect(() => {
     fetchBadges();
   }, []);
@@ -139,17 +141,9 @@ const Achievement = ({ currentMainBadgeId, onBadgeUpdate }: AchievementProps) =>
         // TODO: 사용자에게 에러 메시지 표시
       }
     } else {
+      // 공유하기 - 현재 페이지에서 공유 모달 열기
       setConfirmModalVisible(false);
-      // 소셜 페이지로 이동하면서 뱃지 정보 전달
-      router.push({
-        pathname: '/(protected)/(tabs)/social',
-        params: {
-          showShareModal: 'true',
-          badgeIcon: selectedBadge?.icon || '',
-          badgeTitle: selectedBadge?.title || '',
-          badgeDescription: selectedBadge?.description || '',
-        },
-      });
+      setShareModalVisible(true);
     }
   };
 
@@ -177,14 +171,12 @@ const Achievement = ({ currentMainBadgeId, onBadgeUpdate }: AchievementProps) =>
           />
         </TouchableOpacity>
       </View>
-
       {error && (
         <View className="mb-3 rounded-lg bg-yellow-50 p-3">
           <Text className="text-sm text-yellow-700">{error}</Text>
           <Text className="text-xs text-yellow-600">기본 데이터를 표시합니다.</Text>
         </View>
       )}
-
       {badges.length === 0 ? (
         <View className="items-center justify-center py-8">
           <Text className="text-gray-500">획득한 뱃지가 없습니다.</Text>
@@ -206,7 +198,6 @@ const Achievement = ({ currentMainBadgeId, onBadgeUpdate }: AchievementProps) =>
           </View>
         ))
       )}
-
       {/* Badge Action Modal */}
       <BadgeActionModal
         visible={actionModalVisible}
@@ -216,13 +207,22 @@ const Achievement = ({ currentMainBadgeId, onBadgeUpdate }: AchievementProps) =>
         onShowBadgeWearModal={handleShowBadgeWearModal}
         onShowBadgeShareModal={handleShowBadgeShareModal}
       />
-
       <BadgeConfirmModal
         visible={confirmModalVisible}
         badge={selectedBadge}
         type={confirmModalType}
         onClose={handleCloseConfirmModal}
         onConfirm={handleConfirmAction}
+      />
+      <ShareBadgeModal
+        visible={shareModalVisible}
+        badge={selectedBadge}
+        onClose={() => setShareModalVisible(false)}
+        onSubmit={(content: string) => {
+          console.log('공유 내용:', content);
+          setShareModalVisible(false);
+          // TODO: 공유 로직 구현
+        }}
       />
 
       {/* 획득한 뱃지 정보 모달 */}

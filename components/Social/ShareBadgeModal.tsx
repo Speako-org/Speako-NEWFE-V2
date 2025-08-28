@@ -32,20 +32,20 @@ export default function ShareBadgeModal({
             className="flex items-center rounded-3xl bg-white p-6 shadow-lg"
             style={{ minWidth: 320 }}>
             <View className="my-1 flex-row items-center justify-center text-gray-800">
-              <Text className="mr-1 text-lg font-bold">나의 뱃지 공유하기</Text>
+              <Text className="mr-2 text-lg font-bold">나의 뱃지 공유하기</Text>
               <Octicons name="pencil" size={18} />
             </View>
 
             <View className="mb-6 items-center">
-              <Text className="text-xs text-gray-500">
+              <Text className="text-sm text-gray-500">
                 나의 성과를 소셜에 올려 사람들과 소통해보세요!
               </Text>
             </View>
 
-            <View className="mb-6 flex h-[230px] w-[270px] justify-between rounded-lg border border-gray-200 bg-gray-100 px-2 py-3">
+            <View className="mb-6 flex h-[230px] w-[280px] justify-between rounded-lg border border-gray-100 bg-gray-100 px-2 py-3">
               <TextInput
-                className="rounded-lg bg-gray-100 p-3 text-xs text-gray-800"
-                placeholder={`이 뱃지를 얻기 위해 무슨 노력을 하셨나요?\n(최대 100자)`}
+                className="text-m rounded-lg bg-gray-100 p-3 text-gray-800"
+                placeholder={`이 뱃지를 얻기 위해 무슨 노력을 하셨나요? (최대 100자)`}
                 maxLength={100}
                 multiline
                 value={content}
@@ -59,11 +59,11 @@ export default function ShareBadgeModal({
 
             {/* 버튼 */}
             <View className="w-full flex-row space-x-3">
-              <TouchableOpacity className="flex-1 rounded-lg py-1" onPress={onClose}>
+              <TouchableOpacity className="flex-1 rounded-lg" onPress={onClose}>
                 <Text className="text-center text-lg font-bold text-[#888]">취소</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                className="flex-1 rounded-lg py-1"
+                className="flex-1 rounded-lg"
                 onPress={() => {
                   onSubmit(content);
                   setContent('');
