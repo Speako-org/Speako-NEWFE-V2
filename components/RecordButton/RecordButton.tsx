@@ -2,7 +2,7 @@ import { TouchableOpacity, View, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import LottieView from 'lottie-react-native';
 import recordingAnimation from '../../assets/recording.json';
-import { Audio } from 'expo-av';
+import { Audio } from 'expo-audio';
 
 interface RecordButtonProps {
   recording: boolean;

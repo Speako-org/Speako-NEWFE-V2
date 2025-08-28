@@ -4,6 +4,7 @@ import { API_ENDPOINTS } from '../config';
 export interface Challenge {
   challengeName: string;
   description: string;
+  icon: string;
   levelName: string;
   currentAmount: number;
   requiredAmount: number;

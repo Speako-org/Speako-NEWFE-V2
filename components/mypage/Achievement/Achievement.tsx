@@ -27,34 +27,8 @@ const Achievement = () => {
   const [badges, setBadges] = useState<BadgeItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // 하드코딩
-  const defaultBadges: BadgeItem[] = [
-    {
-      icon: '🔥',
-      title: '긍정의 시작',
-      description: '첫번째 긍정적 표현 달성',
-    },
-    {
-      icon: '👍',
-      title: '꾸준한 노력',
-      description: '7일 연속 기록',
-    },
-    {
-      icon: '✅',
-      title: '챌린지 달성',
-      description: '월간 챌린지 100% 달성',
-    },
-    {
-      icon: '⭐',
-      title: '실천왕',
-      description: '부정적 표현 50% 감소',
-    },
-  ];
-
   useEffect(() => {
     fetchBadges();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchBadges = async () => {
@@ -67,7 +41,7 @@ const Achievement = () => {
       if (response.isSuccess && response.result) {
         // API 응답을 컴포넌트에서 사용하는 형태로 변환
         const transformedBadges: BadgeItem[] = response.result.map((badge: BadgeType) => ({
-          icon: getBadgeIcon(badge.badgeName),
+          icon: badge.icon,
           title: badge.badgeName,
           description: badge.description,
         }));
@@ -75,34 +49,15 @@ const Achievement = () => {
         setBadges(transformedBadges);
       } else {
         setError(response.message || '뱃지 데이터를 불러오는데 실패했습니다.');
-        // 에러 시 기본 데이터 사용
-        setBadges(defaultBadges);
+        setBadges([]);
       }
     } catch (err) {
       console.error('뱃지 데이터 가져오기 실패:', err);
       setError('네트워크 오류가 발생했습니다.');
-      // 에러 시 기본 데이터 사용
-      setBadges(defaultBadges);
+      setBadges([]);
     } finally {
       setLoading(false);
     }
-  };
-
-  const getBadgeIcon = (badgeName: string): string => {
-    // 뱃지 이름에 따른 아이콘 매핑
-    const iconMap: { [key: string]: string } = {
-      '긍정의 시작': '🔥',
-      '꾸준한 노력': '👍',
-      '챌린지 달성': '✅',
-      실천왕: '⭐',
-      '첫 기록': '📝',
-      '연속 기록': '📅',
-      '개선 달성': '📈',
-      '완벽 달성': '🏆',
-      마스터: '👑',
-    };
-
-    return iconMap[badgeName] || '🎯'; // 기본 아이콘
   };
 
   const handleBadgePress = (badge: BadgeItem, index: number) => {
@@ -138,10 +93,8 @@ const Achievement = () => {
 
   const handleConfirmAction = () => {
     if (confirmModalType === 'wear') {
-      console.log('Badge wear confirmed');
       handleCloseConfirmModal();
     } else {
-      console.log('Badge share confirmed');
       setConfirmModalVisible(false);
       // 소셜 페이지로 이동하면서 뱃지 정보 전달
       router.push({

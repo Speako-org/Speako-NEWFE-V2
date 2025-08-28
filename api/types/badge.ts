@@ -3,8 +3,10 @@ import { API_ENDPOINTS } from '../config';
 
 // 뱃지 관련 타입 정의
 export interface Badge {
+  userBadgeId: number;
   badgeName: string;
   description: string;
+  icon: string;
 }
 
 export interface BadgeResponse {

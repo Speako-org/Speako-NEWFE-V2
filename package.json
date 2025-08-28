@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "expo-router/entry",
   "scripts": {
-    "start": "expo start --dev-client --port 8080",
+    "start": "expo start --port 8080",
     "ios": "expo run:ios",
     "android": "expo run:android",
     "build:dev": "eas build --profile development",
@@ -24,7 +24,7 @@
     "@shopify/react-native-skia": "^2.0.0",
     "expo": "^53.0.9",
     "expo-audio": "^0.4.5",
-    "expo-av": "~15.1.4",
+    "expo-av": "~15.1.7",
     "expo-constants": "~17.1.4",
     "expo-dev-client": "~5.2.4",
     "expo-dev-launcher": "^5.0.17",
