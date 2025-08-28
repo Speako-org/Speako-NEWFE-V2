@@ -123,11 +123,11 @@ const EmotionChart = ({ onShowInfoModal }: EmotionChartProps) => {
       {/* Chart Box */}
       <View
         className="pb-[10px]"
-                 style={{
-           minHeight: 300,
-           alignItems: 'center',
-           justifyContent: 'center',
-         }}>
+        style={{
+          minHeight: 300,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
         <LineChart
           data={chartData}
           width={chartWidth}

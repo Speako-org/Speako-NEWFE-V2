@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { Alert, Text, View, TouchableOpacity } from 'react-native';
-import Audio from 'expo-audio';
+import { Alert, Text, View, TouchableOpacity, Animated } from 'react-native';
+import { Audio, InterruptionModeIOS, InterruptionModeAndroid } from 'expo-av';
 import { formatDateTime } from '../../../utils/formatDataTime';
 import { formatTime } from '../../../utils/formatTime';
 import RecordButton from '../../../components/RecordButton/RecordButton';
@@ -16,12 +16,35 @@ export default function Home() {
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const [recordedUri, setRecordedUri] = useState<string | null>(null);
   const [currentDateTime, setCurrentDateTime] = useState(new Date());
-  const [sound, setSound] = useState<any>(null);
-  const [recordingInstance, setRecordingInstance] = useState<any>(null);
+  const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const [recordingInstance, setRecordingInstance] = useState<Audio.Recording | null>(null);
   const [recordId, setRecordId] = useState<number | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const pulseAnim = useRef(new Animated.Value(1)).current;
 
   const BASE_URL = 'https://speako.site/api';
+
+  const startPulseAnimation = () => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1.2,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  };
+
+  const stopPulseAnimation = () => {
+    pulseAnim.stopAnimation();
+    pulseAnim.setValue(1);
+  };
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -59,18 +82,38 @@ export default function Home() {
 
   const onStartRecord = async () => {
     try {
+      // 기존 녹음 객체가 있으면 완전히 정리
       if (recordingInstance) {
         try {
           await recordingInstance.stopAndUnloadAsync();
-        } catch (e) {}
+        } catch {}
         setRecordingInstance(null);
-        return;
+        setRecording(false);
       }
+
+      // Audio 모드를 완전히 리셋
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        playsInSilentModeIOS: false,
+        staysActiveInBackground: false,
+      });
+
+      // 잠시 대기
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
       await Audio.requestPermissionsAsync();
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: true,
         playsInSilentModeIOS: true,
+        staysActiveInBackground: false,
+        interruptionModeIOS: InterruptionModeIOS.DoNotMix,
+        shouldDuckAndroid: true,
+        interruptionModeAndroid: InterruptionModeAndroid.DoNotMix,
       });
+
+      // 추가 대기
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
       setRecordedUri(null);
       const { recording } = await Audio.Recording.createAsync(
         Audio.RecordingOptionsPresets.HIGH_QUALITY
@@ -93,7 +136,7 @@ export default function Home() {
       if (recordingInstance) {
         try {
           await recordingInstance.stopAndUnloadAsync();
-        } catch (e) {}
+        } catch {}
         const uri = recordingInstance.getURI();
         setRecordedUri(uri);
         setRecordEndTime(new Date()); // 녹음 끝나는 시간 저장
@@ -125,6 +168,15 @@ export default function Home() {
       setRecording(false);
     }
   }, [recordingInstance]);
+
+  useEffect(() => {
+    if (recording) {
+      startPulseAnimation();
+    } else {
+      stopPulseAnimation();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recording]);
 
   const onPlayRecordedAudio = async () => {
     if (recordedUri) {
@@ -282,28 +334,29 @@ export default function Home() {
 
   return (
     <View className="relative flex-1 items-center justify-center">
-      {recording && <View className="absolute inset-0 z-10 bg-black/50" pointerEvents="none" />}
-      <View className="absolute bottom-0 h-[111px] w-full" />
+      {recording && <View className="absolute inset-0 z-10 bg-black/70" pointerEvents="none" />}
+      <View className="absolute bottom-0 h-[80px] w-full" />
 
       <Text className="ml-[30px] self-start text-[33px] font-bold">음성 녹음</Text>
 
-      <View className="mb-[10px] mt-[30px] w-[85%] flex-row justify-between">
-        <Text className="rounded-xl bg-[#e8e8e8] px-[12px] py-[5px] text-[15px] text-[#4a4a4a]">
+      <View className="mb-[25px] mt-[20px] w-[85%] flex-row justify-between">
+        <Text className="rounded-xl bg-[#ececec] px-[16px] py-[8px]  text-[15px] font-medium text-[#4A89F3]">
           {formattedDate}
         </Text>
-        <Text className="rounded-xl bg-[#e8e8e8] px-[12px] py-[5px] text-[15px] text-[#4a4a4a]">
+        <Text className="rounded-xl bg-[#ececec] px-[16px] py-[8px] text-[15px] font-medium text-[#4A89F3]">
           {formattedTime}
         </Text>
       </View>
 
       <View
-        className={`elevation-4 shadow-xs relative z-20 mb-[100px] h-[200px] w-[85%] items-center justify-center rounded-[20px] px-[30px] ${
-          recording ? 'bg-white' : 'bg-[#f9f9f9]'
-        }`}>
-        {recording && <View className="absolute z-[-1] h-full w-full rounded-[10px] bg-white/80" />}
+        className={`elevation-4 shadow-xs relative z-20 mb-[80px] h-[150px] w-[85%] items-center justify-center rounded-[20px] bg-transparent px-[30px]`}
+        style={{ marginTop: '10%' }}>
+        {recording && (
+          <View className="absolute z-[-1] h-full w-full rounded-[10px] bg-transparent" />
+        )}
 
         {recording && (
-          <Text className="absolute right-[18px] top-[18px] text-[15px] text-[#303030]">
+          <Text className="absolute right-[18px] mb-[220px] text-[15px] text-[#303030]">
             {`${formatTime(recordTime)} / 01:00:00`}
           </Text>
         )}
@@ -314,17 +367,61 @@ export default function Home() {
           onStopRecord={onStopRecord}
         />
 
-        <Text
-          className="pt-[20px] text-[15px] font-medium  tracking-[0.5px] text-[#888]"
-          style={{
-            shadowColor: '#000',
-            shadowOpacity: 0.1,
-            shadowOffset: { width: 0, height: 1 },
-            shadowRadius: 2,
-            elevation: 2,
-          }}>
-          {recording ? '한번 더 누를 시 중지됩니다.' : '버튼을 누르시면 음성이 기록됩니다.'}
-        </Text>
+        {recording && (
+          <View className="mt-[10px] items-center">
+            <View className="mb-[10px] mr-3 flex-row items-center">
+              <Animated.Image
+                source={require('../../../assets/recording_on_button.png')}
+                style={{
+                  width: 30,
+                  height: 30,
+                  resizeMode: 'contain',
+                  marginRight: 8,
+                  transform: [{ scale: pulseAnim }],
+                }}
+              />
+              <Text
+                className="ml-1 text-[18px] font-semibold text-[#a7a7a7]"
+                style={{
+                  shadowColor: '#000',
+                  shadowOpacity: 0.5,
+                  shadowOffset: { width: 0, height: 1 },
+                  shadowRadius: 2,
+                  elevation: 2,
+                }}>
+                녹음중
+              </Text>
+            </View>
+            <Text
+              className="mt-2 text-[15px] font-medium tracking-[0.5px]"
+              style={{
+                shadowColor: '#000',
+                shadowOpacity: 0.1,
+                shadowOffset: { width: 0, height: 1 },
+                shadowRadius: 2,
+                elevation: 2,
+                color: '#a7a7a7',
+                opacity: 0.8,
+              }}>
+              한번 더 누를 시 중지됩니다.
+            </Text>
+          </View>
+        )}
+        {!recording && (
+          <Text
+            className="mt-[30px] text-[15px] font-bold tracking-[0.5px]"
+            style={{
+              shadowColor: '#000',
+              shadowOpacity: 0.1,
+              shadowOffset: { width: 0, height: 1 },
+              shadowRadius: 2,
+              elevation: 2,
+              color: '#858585',
+              opacity: 0.8,
+            }}>
+            버튼을 누르시면 음성이 기록됩니다.
+          </Text>
+        )}
       </View>
 
       <TouchableOpacity
