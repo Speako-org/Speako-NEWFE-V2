@@ -85,4 +85,37 @@ export const apiClient = {
       throw error;
     }
   },
+
+  async patch<T>(endpoint: string, data?: any): Promise<T> {
+    try {
+      const url = `${config.BASE_URL}${endpoint}`;
+      console.log('API 호출 URL:', url);
+
+      const accessToken = await getAuthToken();
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+
+      if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`;
+      }
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), config.TIMEOUT);
+
+      const response = await fetch(url, {
+        method: 'PATCH',
+        headers,
+        body: data ? JSON.stringify(data) : undefined,
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      return await response.json();
+    } catch (error) {
+      console.error('API 요청 실패:', error);
+      throw error;
+    }
+  },
 };

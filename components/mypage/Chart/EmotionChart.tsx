@@ -1,9 +1,13 @@
 import { useState, useEffect } from 'react';
-import { View, Text, Dimensions } from 'react-native';
+import { View, Text, Dimensions, TouchableOpacity, Image } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 import { myPageApi, MonthlyStat } from '../../../api/types/statistic';
 
-const EmotionChart = () => {
+interface EmotionChartProps {
+  onShowInfoModal?: (event: any) => void;
+}
+
+const EmotionChart = ({ onShowInfoModal }: EmotionChartProps) => {
   const [monthlyStats, setMonthlyStats] = useState<MonthlyStat[]>([]);
   const [screenWidth, setScreenWidth] = useState(Dimensions.get('window').width);
 
@@ -93,8 +97,15 @@ const EmotionChart = () => {
   return (
     <View className="">
       {/* Header */}
-      <View className="mb-[15px] flex-row items-center justify-between px-1 pt-6">
+      <View className="mb-[15px] flex-row items-center px-1 pt-6">
         <Text className="mx-[10px] text-[18px] font-bold text-black">언어 습관 그래프</Text>
+        <TouchableOpacity onPress={onShowInfoModal}>
+          <Image
+            source={require('../../../assets/information.png')}
+            style={{ width: 16, height: 16 }}
+            resizeMode="contain"
+          />
+        </TouchableOpacity>
       </View>
 
       {/* Legend */}
@@ -112,11 +123,11 @@ const EmotionChart = () => {
       {/* Chart Box */}
       <View
         className="pb-[10px]"
-        style={{
-          minHeight: 250,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}>
+                 style={{
+           minHeight: 300,
+           alignItems: 'center',
+           justifyContent: 'center',
+         }}>
         <LineChart
           data={chartData}
           width={chartWidth}
