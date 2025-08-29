@@ -101,9 +101,13 @@ export default function SocialScreen() {
 
       <ShareBadgeModal
         visible={shareModalVisible}
-        badge={selectedBadge}
         onClose={() => setShareModalVisible(false)}
-        onSubmit={handleSubmitShare}
+        onSubmit={(content, badgeId) => {
+          console.log('작성된 글:', content);
+          console.log('선택된 뱃지 ID:', badgeId);
+          // 👉 여기서 실제 글 작성 API 호출하면 됨
+          setShareModalVisible(false);
+        }}
       />
 
       <FAButton
