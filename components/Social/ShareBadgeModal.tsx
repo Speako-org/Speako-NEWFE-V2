@@ -19,12 +19,14 @@ interface Badge {
   icon: string;
   title: string;
   description: string;
+  createdAt: string;
+  posted: boolean;
 }
 
 interface ShareBadgeModalProps {
   visible: boolean;
   onClose: () => void;
-  onSubmit: (content: string, badgeId: number) => void; // badge_id도 같이 전달
+  onSubmit: (content: string, badgeId: number) => void;
 }
 
 export default function ShareBadgeModal({ visible, onClose, onSubmit }: ShareBadgeModalProps) {
@@ -44,22 +46,23 @@ export default function ShareBadgeModal({ visible, onClose, onSubmit }: ShareBad
         });
         const data = await res.json();
 
-        if (isMounted) {
+        if (isMounted && data.isSuccess) {
           const badgeList = data.result.map((b: any) => ({
             id: b.userBadgeId,
             icon: b.icon,
             title: b.badgeName,
             description: b.description,
+            posted: b.posted,
+            createdAt: b.createdAt,
           }));
           setBadges(badgeList);
 
-          // 첫 번째 뱃지 기본 선택
-          if (badgeList.length > 0) {
-            setSelectedBadge(badgeList[0]);
-          }
+          // 첫 번째 뱃지 기본 선택 (단, posted === false 인 경우에만)
+          const firstAvailable = badgeList.find((b: Badge) => !b.posted) || null;
+          setSelectedBadge(firstAvailable);
         }
       } catch (err) {
-        console.error(err);
+        console.error('뱃지 조회 에러:', err);
       }
     };
 
@@ -70,15 +73,56 @@ export default function ShareBadgeModal({ visible, onClose, onSubmit }: ShareBad
     };
   }, [visible]);
 
+  const handleSubmit = async () => {
+    if (content.trim().length === 0) return alert('내용을 입력해주세요!');
+    if (!selectedBadge) return alert('뱃지를 선택해주세요!');
+    if (selectedBadge.posted) return alert('이미 게시물이 있는 뱃지입니다!');
+
+    try {
+      const accessToken = await SecureStore.getItemAsync('accessToken');
+      console.log(accessToken);
+      console.log('글 작성 내용, 아이디', content, selectedBadge.id);
+      const res = await fetch('https://speako.site/api/articles/post', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          content: content,
+          user_badge_id: selectedBadge.id,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.isSuccess) {
+        alert('글 작성 완료!');
+        console.log('뱃지 글 작성 성공');
+        onSubmit(content, selectedBadge.id);
+        setContent('');
+
+        // 다시 선택 가능한 첫 번째 뱃지로 세팅
+        const firstAvailable = badges.find((b: Badge) => !b.posted) || null;
+        setSelectedBadge(firstAvailable);
+
+        onClose();
+      } else {
+        alert(`글 작성 실패: ${data.message}`);
+      }
+    } catch (err) {
+      console.error('글 작성 에러:', err);
+      alert('글 작성 중 오류가 발생했습니다.');
+    }
+  };
+
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View className="flex-1 items-center justify-center bg-black/50 px-10">
-        {/* 바깥 영역(배경) 눌렀을 때 닫힘 */}
+        {/* 바깥 영역 눌러서 닫기 */}
         <TouchableWithoutFeedback onPress={onClose}>
           <View className="absolute inset-0" />
         </TouchableWithoutFeedback>
 
-        {/* 실제 모달 박스 */}
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           className="flex items-center rounded-3xl bg-white p-6 shadow-lg"
@@ -95,7 +139,7 @@ export default function ShareBadgeModal({ visible, onClose, onSubmit }: ShareBad
             </Text>
           </View>
 
-          {/* 입력 + 뱃지 미리보기 */}
+          {/* 입력 + 뱃지 선택 + 미리보기 */}
           <View className="mb-6 mt-4 flex h-[250px] w-[280px] justify-between rounded-lg border border-gray-100 bg-gray-100 px-2 py-3">
             <TextInput
               className="text-m mb-1 h-[80px] rounded-lg bg-gray-100 px-3 py-1 text-gray-800"
@@ -112,22 +156,44 @@ export default function ShareBadgeModal({ visible, onClose, onSubmit }: ShareBad
               horizontal
               keyExtractor={(item) => item.id.toString()}
               showsHorizontalScrollIndicator={false}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  className={`mx-1 h-9 w-9 rounded-lg border ${
-                    selectedBadge?.id === item.id
-                      ? 'border-purple-500 bg-purple-50'
-                      : 'border-gray-200 bg-white'
-                  }`}
-                  onPress={() => setSelectedBadge(item)}>
-                  <Text className="px-1 pt-0.5 text-xl">{item.icon}</Text>
-                </TouchableOpacity>
-              )}
+              renderItem={({ item }) => {
+                const isSelected = selectedBadge?.id === item.id;
+                const isDisabled = item.posted;
+
+                return (
+                  <TouchableOpacity
+                    disabled={isDisabled}
+                    className={`relative mx-1 h-9 w-9 items-center justify-center rounded-lg border
+                      ${isSelected ? 'border-purple-500 bg-purple-50' : 'border-gray-200 bg-white'}
+                      ${isDisabled ? 'opacity-40' : ''}
+                    `}
+                    onPress={() => {
+                      if (!isDisabled) setSelectedBadge(item);
+                    }}>
+                    <Text className="text-xl">{item.icon}</Text>
+
+                    {/* posted == true 이면 잠금 아이콘 */}
+                    {isDisabled && (
+                      <View className="absolute inset-0 flex items-center justify-center">
+                        <Octicons name="lock" size={20} color="black" />
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                );
+              }}
             />
 
-            {selectedBadge && (
+            {/* 선택된 뱃지 미리보기 */}
+            {selectedBadge ? (
               <View className="mt-1.5 flex rounded-lg bg-white">
-                {selectedBadge && <BadgeCard badge={selectedBadge} />}
+                <BadgeCard badge={selectedBadge} />
+              </View>
+            ) : (
+              <View className="mt-1.5 flex flex-col items-center justify-center rounded-lg bg-white p-4">
+                <Octicons name="report" size={20} color="gray" />
+                <Text className="mt-2 text-center text-sm text-gray-500">
+                  모든 뱃지에 대한 게시글이 작성되었습니다.
+                </Text>
               </View>
             )}
           </View>
@@ -137,18 +203,7 @@ export default function ShareBadgeModal({ visible, onClose, onSubmit }: ShareBad
             <TouchableOpacity className="flex-1 rounded-lg" onPress={onClose}>
               <Text className="text-center text-lg font-bold text-[#888]">취소</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              className="flex-1 rounded-lg"
-              onPress={() => {
-                if (content.trim().length === 0) return; // 빈 내용 방지
-                if (!selectedBadge) {
-                  alert('뱃지를 선택해주세요!');
-                  return;
-                }
-                onSubmit(content, selectedBadge.id); // ✅ badgeId 함께 전달
-                setContent('');
-                setSelectedBadge(null);
-              }}>
+            <TouchableOpacity className="flex-1 rounded-lg" onPress={handleSubmit}>
               <Text className="text-center text-lg font-bold text-[#8953E0]">작성하기</Text>
             </TouchableOpacity>
           </View>
