@@ -17,9 +17,17 @@ interface PostCardProps {
   post: Post;
   onLikeToggle: (id: number) => void;
   onCommentPress: (id: number) => void;
+  onEditPost?: (id: number) => void; // 수정 핸들러
+  onDeletePost?: (id: number) => void; // 삭제 핸들러
 }
 
-export default function PostCard({ post, onLikeToggle, onCommentPress }: PostCardProps) {
+export default function PostCard({
+  post,
+  onLikeToggle,
+  onCommentPress,
+  onEditPost,
+  onDeletePost,
+}: PostCardProps) {
   return (
     <View className="mx-6 mb-4 rounded-2xl border border-gray-200 bg-white p-5">
       {/* 유저 정보 */}
@@ -34,8 +42,19 @@ export default function PostCard({ post, onLikeToggle, onCommentPress }: PostCar
           </View>
           <Text className="text-sm text-gray-500">{post.timeAgo}</Text>
         </View>
+
+        {/* 수정 / 삭제 아이콘 (📍 내 post에만 뜨게 수정해야함) */}
+        <View className="flex-row">
+          <TouchableOpacity onPress={() => onEditPost?.(post.id)} className="ml-2">
+            <Ionicons name="create-outline" size={18} color="#bbb" />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => onDeletePost?.(post.id)} className="ml-2">
+            <Ionicons name="trash-outline" size={18} color="#bbb" />
+          </TouchableOpacity>
+        </View>
       </View>
 
+      {/* 게시글 내용 */}
       <Text className="mb-3 ml-2 text-base font-medium leading-6">{post.content}</Text>
 
       {/* 뱃지 */}
