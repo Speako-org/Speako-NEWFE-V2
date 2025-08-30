@@ -3,11 +3,11 @@ import { useLocalSearchParams } from 'expo-router';
 import { useState, useEffect } from 'react';
 import { useSocial } from '../../../../hooks/useSocial';
 
-import PostCard from '../../../../components/Social/PostCard';
-import CommentModal from '../../../../components/Social/CommentModal';
-import ShareBadgeModal from '../../../../components/Social/ShareBadgeModal';
-import TabHeader from '../../../../components/Social/TabHeader';
-import FAButton from '../../../../components/Social/FAButton';
+import CommentModal from '~/components/Social/CommentModal';
+import ShareBadgeModal from '~/components/Social/ShareBadgeModal';
+import TabHeader from '~/components/Social/TabHeader';
+import FAButton from '~/components/Social/FAButton';
+import ArticleList from '~/components/Social/ArticleList';
 
 interface Badge {
   icon: string;
@@ -74,15 +74,8 @@ export default function SocialScreen() {
         showsVerticalScrollIndicator={false}
         className="flex-1"
         contentContainerStyle={{ paddingBottom: 100 }}>
-        {activeTab === 'feed' &&
-          posts.map((post) => (
-            <PostCard
-              key={post.id}
-              post={post}
-              onLikeToggle={handleLikeToggle}
-              onCommentPress={handleCommentPress}
-            />
-          ))}
+        {activeTab === 'feed' && <ArticleList />}
+
         {activeTab === 'friends' && (
           <View className="items-center justify-center py-20">
             <Text className="text-gray-500">준비 중</Text>
