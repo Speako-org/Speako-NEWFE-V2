@@ -1,10 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Dispatch, SetStateAction } from 'react';
 import { ScrollView, View, Text, ActivityIndicator, Alert } from 'react-native';
 import PostCard, { Post } from './PostCard';
 import * as SecureStore from 'expo-secure-store';
 
-export default function ArticleList() {
-  const [posts, setPosts] = useState<Post[]>([]);
+interface ArticleListProps {
+  posts: Post[];
+  setPosts: Dispatch<SetStateAction<Post[]>>;
+}
+
+export default function ArticleList({ posts, setPosts }: ArticleListProps) {
   const [loading, setLoading] = useState(false);
 
   const fetchArticles = async () => {
@@ -15,10 +19,24 @@ export default function ArticleList() {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       const data = await res.json();
+
       if (data.isSuccess) {
         const mappedPosts: Post[] = data.result.content.map((item: any) => {
-          const date = new Date(item.createdAt);
-          const formattedTime = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+          let formattedTime = '날짜 없음';
+          if (item.createdAt) {
+            const date = new Date(item.createdAt);
+            if (!isNaN(date.getTime())) {
+              date.setHours(date.getHours() + 9); // 한국 시간 변환
+
+              formattedTime = `${date.getFullYear()}-${(date.getMonth() + 1)
+                .toString()
+                .padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')} ${date
+                .getHours()
+                .toString()
+                .padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+            }
+          }
+
           return {
             id: item.articleId,
             userName: item.username,
@@ -28,7 +46,7 @@ export default function ArticleList() {
             comments: item.commentNum,
             isLiked: false,
             badge: {
-              icon: '🏆',
+              icon: item.icon,
               title: item.badgeTitle,
               description: item.badgeDescription,
               createdAt: item.createdAt,
@@ -67,10 +85,7 @@ export default function ArticleList() {
       '게시글 삭제',
       '정말로 삭제하시겠습니까?',
       [
-        {
-          text: '취소',
-          style: 'cancel',
-        },
+        { text: '취소', style: 'cancel' },
         {
           text: '삭제',
           style: 'destructive',
@@ -83,7 +98,6 @@ export default function ArticleList() {
               });
               const data = await res.json();
               if (data.isSuccess) {
-                // 삭제 성공 시 posts 제거
                 setPosts((prev) => prev.filter((post) => post.id !== articleId));
               } else {
                 Alert.alert('삭제 실패', data.message || '알 수 없는 오류');

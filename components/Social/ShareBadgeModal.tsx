@@ -14,7 +14,7 @@ import Octicons from '@expo/vector-icons/Octicons';
 import BadgeCard from './BadgeCard';
 import * as SecureStore from 'expo-secure-store';
 
-interface Badge {
+export interface Badge {
   id: number;
   icon: string;
   title: string;
@@ -26,7 +26,7 @@ interface Badge {
 interface ShareBadgeModalProps {
   visible: boolean;
   onClose: () => void;
-  onSubmit: (content: string, badgeId: number) => void;
+  onSubmit: (content: string, badge: Badge) => void;
 }
 
 export default function ShareBadgeModal({ visible, onClose, onSubmit }: ShareBadgeModalProps) {
@@ -57,7 +57,6 @@ export default function ShareBadgeModal({ visible, onClose, onSubmit }: ShareBad
           }));
           setBadges(badgeList);
 
-          // 첫 번째 뱃지 기본 선택 (단, posted === false 인 경우에만)
           const firstAvailable = badgeList.find((b: Badge) => !b.posted) || null;
           setSelectedBadge(firstAvailable);
         }
@@ -80,8 +79,6 @@ export default function ShareBadgeModal({ visible, onClose, onSubmit }: ShareBad
 
     try {
       const accessToken = await SecureStore.getItemAsync('accessToken');
-      console.log(accessToken);
-      console.log('글 작성 내용, 아이디', content, selectedBadge.id);
       const res = await fetch('https://speako.site/api/articles/post', {
         method: 'POST',
         headers: {
@@ -96,12 +93,9 @@ export default function ShareBadgeModal({ visible, onClose, onSubmit }: ShareBad
 
       const data = await res.json();
       if (res.ok && data.isSuccess) {
-        alert('글 작성 완료!');
-        console.log('뱃지 글 작성 성공');
-        onSubmit(content, selectedBadge.id);
+        onSubmit(content, selectedBadge);
         setContent('');
 
-        // 다시 선택 가능한 첫 번째 뱃지로 세팅
         const firstAvailable = badges.find((b: Badge) => !b.posted) || null;
         setSelectedBadge(firstAvailable);
 

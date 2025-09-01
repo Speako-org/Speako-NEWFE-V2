@@ -17,8 +17,8 @@ interface PostCardProps {
   post: Post;
   onLikeToggle: (id: number) => void;
   onCommentPress: (id: number) => void;
-  onEditPost?: (id: number) => void; // 수정 핸들러
-  onDeletePost?: (id: number) => void; // 삭제 핸들러
+  onEditPost?: (id: number) => void;
+  onDeletePost?: (id: number) => void;
 }
 
 export default function PostCard({
@@ -43,7 +43,7 @@ export default function PostCard({
           <Text className="text-sm text-gray-500">{post.timeAgo}</Text>
         </View>
 
-        {/* 수정 / 삭제 아이콘 (📍 내 post에만 뜨게 수정해야함) */}
+        {/* 수정 / 삭제 아이콘 */}
         <View className="flex-row">
           <TouchableOpacity onPress={() => onEditPost?.(post.id)} className="ml-2">
             <Ionicons name="create-outline" size={18} color="#bbb" />

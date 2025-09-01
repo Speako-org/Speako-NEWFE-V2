@@ -2,12 +2,15 @@ import { SafeAreaView, View, Text, ScrollView } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useState, useEffect } from 'react';
 import { useSocial } from '../../../../hooks/useSocial';
+import * as SecureStore from 'expo-secure-store';
+import dayjs from 'dayjs';
 
 import CommentModal from '~/components/Social/CommentModal';
 import ShareBadgeModal from '~/components/Social/ShareBadgeModal';
 import TabHeader from '~/components/Social/TabHeader';
 import FAButton from '~/components/Social/FAButton';
 import ArticleList from '~/components/Social/ArticleList';
+import { Post } from '~/components/Social/PostCard';
 
 interface Badge {
   icon: string;
@@ -28,20 +31,67 @@ export default function SocialScreen() {
     commentText,
     setCommentText,
     comments,
-    posts,
-    handleLikeToggle,
-    handleCommentPress,
-    handleAddComment,
   } = useSocial();
 
-  // 뱃지 공유 모달 처리
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const fetchArticles = async () => {
+    setLoading(true);
+    try {
+      const accessToken = await SecureStore.getItemAsync('accessToken');
+      const res = await fetch('https://speako.site/api/articles/list?size=10', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      const data = await res.json();
+
+      if (data.isSuccess) {
+        const mappedPosts: Post[] = data.result.content.map((item: any) => {
+          const formattedTime = item.createdAt
+            ? dayjs(item.createdAt).format('YYYY-MM-DD HH:mm')
+            : '날짜 없음';
+
+          return {
+            id: item.articleId,
+            userName: item.username,
+            timeAgo: formattedTime,
+            content: item.content,
+            likes: item.likedNum,
+            comments: item.commentNum,
+            isLiked: false,
+            badge: {
+              icon: item.icon,
+              title: item.badgeTitle,
+              description: item.badgeDescription,
+              createdAt: item.createdAt,
+            },
+          };
+        });
+        setPosts(mappedPosts);
+      }
+    } catch (err) {
+      console.error('게시글 조회 에러:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchArticles();
+  }, []);
+
+  const handleSubmitShare = async () => {
+    await fetchArticles();
+    setShareModalVisible(false);
+  };
+
   useEffect(() => {
     if (
       params.showShareModal === 'true' &&
       params.badgeIcon &&
       params.badgeTitle &&
       params.badgeDescription &&
-      !shareModalVisible // 모달이 이미 열려있지 않을 때만 열기
+      !shareModalVisible
     ) {
       setSelectedBadge({
         icon: params.badgeIcon as string,
@@ -58,11 +108,6 @@ export default function SocialScreen() {
     shareModalVisible,
   ]);
 
-  const handleSubmitShare = () => {
-    console.log('뱃지 공유 완료!');
-    setShareModalVisible(false);
-  };
-
   return (
     <SafeAreaView className="relative flex-1 bg-white">
       <View className="px-6 pb-6 pt-12">
@@ -74,7 +119,7 @@ export default function SocialScreen() {
         showsVerticalScrollIndicator={false}
         className="flex-1"
         contentContainerStyle={{ paddingBottom: 100 }}>
-        {activeTab === 'feed' && <ArticleList />}
+        {activeTab === 'feed' && <ArticleList posts={posts} setPosts={setPosts} />}
 
         {activeTab === 'friends' && (
           <View className="items-center justify-center py-20">
@@ -89,32 +134,16 @@ export default function SocialScreen() {
         commentText={commentText}
         setCommentText={setCommentText}
         onClose={() => setCommentModalVisible(false)}
-        onAddComment={handleAddComment}
+        onAddComment={() => {}}
       />
 
       <ShareBadgeModal
         visible={shareModalVisible}
         onClose={() => setShareModalVisible(false)}
-        onSubmit={(content, badgeId) => {
-          console.log('작성된 글:', content);
-          console.log('선택된 뱃지 ID:', badgeId);
-          // 👉 여기서 실제 글 작성 API 호출하면 됨
-          setShareModalVisible(false);
-        }}
+        onSubmit={handleSubmitShare}
       />
 
-      <FAButton
-        onPress={() => {
-          if (!selectedBadge) {
-            setSelectedBadge({
-              icon: '🔥',
-              title: '긍정의 시작',
-              description: '첫번째 긍정적 표현 달성',
-            });
-          }
-          setShareModalVisible(true);
-        }}
-      />
+      <FAButton onPress={() => setShareModalVisible(true)} />
     </SafeAreaView>
   );
 }
