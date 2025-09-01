@@ -1,6 +1,7 @@
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import BadgeCard, { Badge } from './BadgeCard';
+import { useMemo, useState } from 'react';
 
 export interface Post {
   id: number;
@@ -11,6 +12,7 @@ export interface Post {
   likes: number;
   comments: number;
   isLiked?: boolean;
+  ImageType?: string;
 }
 
 interface PostCardProps {
@@ -28,11 +30,41 @@ export default function PostCard({
   onEditPost,
   onDeletePost,
 }: PostCardProps) {
+  // 아바타 이미지 실패 시 대체 표시
+  const [avatarError, setAvatarError] = useState(false);
+
+  // 유저 이니셜
+  const initials = useMemo(() => {
+    const name = (post.userName ?? '').trim();
+    if (!name) return 'U';
+    const parts = name.split(/\s+/);
+    const first = parts[0]?.[0] ?? '';
+    const second = parts[1]?.[0] ?? '';
+    return (first + second).toUpperCase();
+  }, [post.userName]);
+
+  const avatarUri = useMemo(() => post.ImageType?.trim() || '', [post.ImageType]);
+  const showImage = !!avatarUri && !avatarError;
+
   return (
     <View className="mx-6 mb-4 rounded-2xl border border-gray-200 bg-white p-5">
       {/* 유저 정보 */}
       <View className="mb-4 flex-row items-center">
-        <View className="mr-3 h-11 w-11 rounded-full bg-gray-300" />
+        {/* URL 있으면 이미지, 없거나 에러면 이니셜 */}
+        {showImage ? (
+          <Image
+            source={{ uri: avatarUri }}
+            className="mr-3 h-11 w-11 rounded-full"
+            resizeMode="cover"
+            onError={() => setAvatarError(true)}
+            accessibilityLabel={`${post.userName}의 프로필 이미지`}
+          />
+        ) : (
+          <View className="mr-3 h-11 w-11 items-center justify-center rounded-full bg-gray-300">
+            <Text className="text-xl font-semibold text-white">{initials}</Text>
+          </View>
+        )}
+
         <View className="flex-1">
           <View className="flex-row items-center">
             <Text className="mr-2 text-lg font-semibold">{post.userName}</Text>
