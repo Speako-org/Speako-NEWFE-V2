@@ -108,16 +108,18 @@ export default function RecordDetail() {
           <View className="w-full flex-row justify-between">
             <View>
               {[
-                { label: '부정적 표현', value: `${analysis.negativeRatio}%` },
-                { label: '긍정적 표현', value: `${analysis.positiveRatio}%` },
+                { label: '부정적 표현', value: Math.round(analysis.negativeRatio * 100) },
+                { label: '긍정적 표현', value: Math.round(analysis.positiveRatio * 100) },
                 {
                   label: '기타',
-                  value: `${100 - (analysis.negativeRatio + analysis.positiveRatio)}%`,
+                  value: Math.round(
+                    100 - (analysis.negativeRatio * 100 + analysis.positiveRatio * 100)
+                  ),
                 },
               ].map((item, idx) => (
                 <View key={idx} className="my-[5px] w-[190px] flex-row justify-between text-[13px]">
                   <Text>{item.label}</Text>
-                  <Text>{item.value}</Text>
+                  <Text>{item.value}%</Text>
                 </View>
               ))}
             </View>

@@ -1,8 +1,8 @@
 import Svg, { Circle } from 'react-native-svg';
 
 interface EmotionCircleChartProps {
-  negativeRatio: number;
-  positiveRatio: number;
+  negativeRatio: number; // 0~1 값
+  positiveRatio: number; // 0~1 값
   size?: number;
   strokeWidth?: number;
 }
@@ -17,18 +17,22 @@ const CircleChart: React.FC<EmotionCircleChartProps> = ({
   const circumference = 2 * Math.PI * radius;
   const center = size / 2;
 
-  const totalRatio = negativeRatio + positiveRatio;
-  const adjustedNegativeRatio =
-    totalRatio > 100 ? (negativeRatio / totalRatio) * 100 : negativeRatio;
-  const adjustedPositiveRatio =
-    totalRatio > 100 ? (positiveRatio / totalRatio) * 100 : positiveRatio;
+  // 퍼센트 값으로 변환
+  const negPercent = Math.round(negativeRatio * 100);
+  const posPercent = Math.round(positiveRatio * 100);
 
-  const negLength = (adjustedNegativeRatio / 100) * circumference;
-  const posLength = (adjustedPositiveRatio / 100) * circumference;
+  // 총합 보정 (100% 넘지 않도록)
+  const totalPercent = negPercent + posPercent;
+  const adjustedNeg = totalPercent > 100 ? (negPercent / totalPercent) * 100 : negPercent;
+  const adjustedPos = totalPercent > 100 ? (posPercent / totalPercent) * 100 : posPercent;
+
+  // 원 둘레에 해당하는 길이
+  const negLength = (adjustedNeg / 100) * circumference;
+  const posLength = (adjustedPos / 100) * circumference;
 
   return (
     <Svg width={size} height={size}>
-      {/* 회색 배경 */}
+      {/* 기본 회색 배경 */}
       <Circle
         cx={center}
         cy={center}
@@ -38,8 +42,8 @@ const CircleChart: React.FC<EmotionCircleChartProps> = ({
         fill="none"
       />
 
-      {/* 긍정(오른쪽) */}
-      {adjustedPositiveRatio > 0 && (
+      {/* 긍정 (파란색, 먼저 그리기) */}
+      {adjustedPos > 0 && (
         <Circle
           cx={center}
           cy={center}
@@ -54,8 +58,8 @@ const CircleChart: React.FC<EmotionCircleChartProps> = ({
         />
       )}
 
-      {/* 부정(왼쪽)*/}
-      {adjustedNegativeRatio > 0 && (
+      {/* 부정 (빨간색, 긍정 위에 이어서 그림) */}
+      {adjustedNeg > 0 && (
         <Circle
           cx={center}
           cy={center}
@@ -64,7 +68,7 @@ const CircleChart: React.FC<EmotionCircleChartProps> = ({
           strokeWidth={strokeWidth}
           fill="none"
           strokeDasharray={`${negLength} ${circumference}`}
-          strokeDashoffset={-negLength}
+          strokeDashoffset={-posLength} // 긍정 길이만큼 이동시켜 이어 그리기
           transform={`rotate(-90 ${center} ${center})`}
           strokeLinecap="butt"
         />
