@@ -1,6 +1,8 @@
-import { FlatList, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, Text, TouchableOpacity, View, Animated } from 'react-native';
 import { AntDesign } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { Swipeable } from 'react-native-gesture-handler';
+import { useRef } from 'react';
 
 type RecordType = {
   id: string;
@@ -13,10 +15,17 @@ interface RecordProps {
   records: RecordType[];
   selectedDate: Date;
   onDateChange: (date: Date) => void;
+  onDeleteRecord: (id: string) => void; // ✅ 추가
 }
 
-export default function RecordDate({ records, selectedDate, onDateChange }: RecordProps) {
+export default function RecordDate({
+  records,
+  selectedDate,
+  onDateChange,
+  onDeleteRecord,
+}: RecordProps) {
   const router = useRouter();
+  const openedRef = useRef<Swipeable | null>(null); // 현재 열린 스와이프 아이템
 
   const changeDate = (days: number) => {
     const newDate = new Date(selectedDate);
@@ -32,9 +41,77 @@ export default function RecordDate({ records, selectedDate, onDateChange }: Reco
 
   const handleRecordPress = (record: RecordType) => {
     router.push({
-      pathname: '/(protected)/record-detail',
+      pathname: 'record-detail',
       params: { id: record.id },
     });
+  };
+
+  const renderRightActions = (
+    progress: Animated.AnimatedInterpolation<number>,
+    dragX: Animated.AnimatedInterpolation<number>,
+    id: string
+  ) => {
+    const translateX = dragX.interpolate({
+      inputRange: [-120, 0],
+      outputRange: [0, 40],
+      extrapolate: 'clamp',
+    });
+
+    return (
+      <Animated.View
+        style={{
+          width: 100,
+          backgroundColor: '#ef4444',
+          justifyContent: 'center',
+          alignItems: 'center',
+          transform: [{ translateX }],
+          marginVertical: 10,
+          marginRight: 10,
+        }}>
+        <TouchableOpacity
+          onPress={() => {
+            openedRef.current?.close();
+            onDeleteRecord(id);
+          }}
+          className="items-center justify-center"
+          accessibilityLabel="기록 삭제">
+          <AntDesign name="delete" size={22} color="#fff" />
+          <Text className="mt-[6px] text-[12px] font-semibold text-white">삭제</Text>
+        </TouchableOpacity>
+      </Animated.View>
+    );
+  };
+
+  const renderItem = ({ item }: { item: RecordType }) => {
+    let swipeRef: Swipeable | null = null;
+
+    return (
+      <Swipeable
+        ref={(ref) => {
+          swipeRef = ref;
+        }}
+        onSwipeableOpen={() => {
+          if (openedRef.current && openedRef.current !== swipeRef) {
+            openedRef.current.close();
+          }
+          openedRef.current = swipeRef;
+        }}
+        onSwipeableClose={() => {
+          if (openedRef.current === swipeRef) openedRef.current = null;
+        }}
+        renderRightActions={(progress, dragX) => renderRightActions(progress, dragX, item.id)}
+        friction={2}
+        rightThreshold={20}
+        overshootRight={false}>
+        <TouchableOpacity onPress={() => handleRecordPress(item)} activeOpacity={0.8}>
+          <View className="mx-[15px] my-[8px] flex-row items-center justify-between bg-white py-[15px]">
+            <Text className="text-[16px] font-bold">{item.title}</Text>
+            <Text className="mr-2 text-[14px] text-[#777]">{item.duration}</Text>
+          </View>
+          <View className="mx-[10px] h-[1px] bg-[#eee]" />
+        </TouchableOpacity>
+      </Swipeable>
+    );
   };
 
   return (
@@ -58,18 +135,11 @@ export default function RecordDate({ records, selectedDate, onDateChange }: Reco
       <FlatList
         data={records}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <TouchableOpacity onPress={() => handleRecordPress(item)}>
-            <View className="mx-[15px] flex-row items-center justify-between py-[20px]">
-              <Text className="text-[16px] font-bold">{item.title}</Text>
-              <Text className="text-[14px] text-[#777]">{item.duration}</Text>
-            </View>
-            <View className="mx-[10px] h-[1px] bg-[#eee]" />
-          </TouchableOpacity>
-        )}
+        renderItem={renderItem}
         ListEmptyComponent={
           <Text className="mx-[15px] mt-[20px] text-[15px] text-[#888]">기록 없음</Text>
         }
+        contentContainerStyle={{ paddingBottom: 10 }}
       />
     </View>
   );

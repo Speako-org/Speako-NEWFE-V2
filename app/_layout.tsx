@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { View, Text } from 'react-native';
 import { loadFonts } from '../utils/fonts';
 import * as Linking from 'expo-linking';
+import { GestureHandlerRootView } from 'react-native-gesture-handler'; // ✅ 추가
 
 export const unstable_settings = {
   initialRouteName: '(tabs)',
@@ -22,7 +23,6 @@ export default function RootLayout() {
         setFontsLoaded(true);
       }
     };
-
     loadAppFonts();
   }, []);
 
@@ -30,13 +30,9 @@ export default function RootLayout() {
     const subscription = Linking.addEventListener('url', (event) => {
       console.log('Deep link received:', event.url);
     });
-
     Linking.getInitialURL().then((url) => {
-      if (url) {
-        console.log('App opened from deep link:', url);
-      }
+      if (url) console.log('App opened from deep link:', url);
     });
-
     return () => subscription?.remove();
   }, []);
 
@@ -48,5 +44,9 @@ export default function RootLayout() {
     );
   }
 
-  return <Slot />;
+  return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <Slot />
+    </GestureHandlerRootView>
+  );
 }
