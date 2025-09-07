@@ -8,10 +8,10 @@ const config = getApiConfig();
 const getAuthToken = async (): Promise<string | null> => {
   try {
     if (Platform.OS === 'web') {
-      // 웹 환경에서는 localStorage 사용
+      // 웹 환경: localStorage 사용
       return localStorage.getItem('accessToken');
     } else {
-      // 네이티브 환경에서는 SecureStore 사용
+      // 네이티브: SecureStore 사용
       return await SecureStore.getItemAsync('accessToken');
     }
   } catch (error) {
@@ -117,5 +117,31 @@ export const apiClient = {
       console.error('API 요청 실패:', error);
       throw error;
     }
+  },
+
+  // 사용자 이름 업데이트 API
+  async updateUsername(newUserName: string): Promise<{
+    isSuccess: boolean;
+    code: string;
+    message: string;
+    result: {
+      userId: number;
+      updatedUserName: string;
+    };
+  }> {
+    return this.patch('/api/users/username', { newUserName });
+  },
+
+  // 프로필 이미지 업데이트 API
+  async updateProfileImage(newImageName: string): Promise<{
+    isSuccess: boolean;
+    code: string;
+    message: string;
+    result: {
+      userId: number;
+      newImageTypeUrl: string;
+    };
+  }> {
+    return this.patch(`/api/users/image?newImageName=${encodeURIComponent(newImageName)}`);
   },
 };
