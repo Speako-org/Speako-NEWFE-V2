@@ -23,6 +23,7 @@ const LoginScreen = () => {
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
   const handleLogin = async () => {
@@ -191,9 +192,14 @@ const LoginScreen = () => {
                     placeholderTextColor="#CECECE"
                     value={password}
                     onChangeText={setPassword}
-                    secureTextEntry
+                    secureTextEntry={!showPassword}
                     autoCapitalize="none"
                   />
+                  <TouchableOpacity
+                    onPress={() => setShowPassword(!showPassword)}
+                    className="ml-2 p-1">
+                    <Feather name={showPassword ? 'eye-off' : 'eye'} size={20} color="#CECECE" />
+                  </TouchableOpacity>
                 </View>
                 <View className="mb-1">
                   <View className="flex-row items-center justify-between">

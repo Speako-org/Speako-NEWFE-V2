@@ -12,16 +12,9 @@ import FAButton from '~/components/Social/FAButton';
 import ArticleList from '~/components/Social/ArticleList';
 import { Post } from '~/components/Social/PostCard';
 
-interface Badge {
-  icon: string;
-  title: string;
-  description: string;
-}
-
 export default function SocialScreen() {
   const params = useLocalSearchParams();
   const [shareModalVisible, setShareModalVisible] = useState(false);
-  const [selectedBadge, setSelectedBadge] = useState<Badge | null>(null);
 
   const {
     activeTab,
@@ -34,10 +27,8 @@ export default function SocialScreen() {
   } = useSocial();
 
   const [posts, setPosts] = useState<Post[]>([]);
-  const [loading, setLoading] = useState(false);
 
   const fetchArticles = async () => {
-    setLoading(true);
     try {
       const accessToken = await SecureStore.getItemAsync('accessToken');
       const res = await fetch('https://speako.site/api/articles/list?size=10', {
@@ -71,8 +62,6 @@ export default function SocialScreen() {
       }
     } catch (err) {
       console.error('게시글 조회 에러:', err);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -93,11 +82,6 @@ export default function SocialScreen() {
       params.badgeDescription &&
       !shareModalVisible
     ) {
-      setSelectedBadge({
-        icon: params.badgeIcon as string,
-        title: params.badgeTitle as string,
-        description: params.badgeDescription as string,
-      });
       setShareModalVisible(true);
     }
   }, [

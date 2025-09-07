@@ -71,8 +71,8 @@ export default function RecordDetail() {
       <View className="flex-1 items-center justify-center bg-white">
         <Text className="text-red-500">분석 데이터를 불러올 수 없습니다.</Text>
 
-        <TouchableOpacity onPress={() => router.back()} className="rounded bg-[#8962c8] px-4 py-2">
-          <Text className="font-semibold text-white">이전 화면으로</Text>
+        <TouchableOpacity onPress={() => router.back()} className="px-4 py-4">
+          <Text className="font-semibold text-[#8962c8]">이전 화면으로</Text>
         </TouchableOpacity>
       </View>
     );
