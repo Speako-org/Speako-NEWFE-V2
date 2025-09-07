@@ -1,28 +1,18 @@
-import { SafeAreaView, View, Text, ScrollView } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
-import { useState, useEffect } from 'react';
-import { useSocial } from '../../../../hooks/useSocial';
+import { SafeAreaView, View, Text, ScrollView, ActivityIndicator } from 'react-native';
+import { useLocalSearchParams, useFocusEffect } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
 import * as SecureStore from 'expo-secure-store';
 import dayjs from 'dayjs';
-
-import CommentModal from '~/components/Social/CommentModal';
-import ShareBadgeModal from '~/components/Social/ShareBadgeModal';
 import TabHeader from '~/components/Social/TabHeader';
 import FAButton from '~/components/Social/FAButton';
 import ArticleList from '~/components/Social/ArticleList';
+import CommentModal from '~/components/Social/CommentModal';
+import ShareBadgeModal from '~/components/Social/ShareBadgeModal';
+import { useSocial } from '~/hooks/useSocial';
 import { Post } from '~/components/Social/PostCard';
-
-interface Badge {
-  icon: string;
-  title: string;
-  description: string;
-}
 
 export default function SocialScreen() {
   const params = useLocalSearchParams();
-  const [shareModalVisible, setShareModalVisible] = useState(false);
-  const [selectedBadge, setSelectedBadge] = useState<Badge | null>(null);
-
   const {
     activeTab,
     setActiveTab,
@@ -35,8 +25,9 @@ export default function SocialScreen() {
 
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(false);
+  const [shareModalVisible, setShareModalVisible] = useState(false);
 
-  const fetchArticles = async () => {
+  const fetchArticles = useCallback(async () => {
     setLoading(true);
     try {
       const accessToken = await SecureStore.getItemAsync('accessToken');
@@ -46,39 +37,57 @@ export default function SocialScreen() {
       const data = await res.json();
 
       if (data.isSuccess) {
-        const mappedPosts: Post[] = data.result.content.map((item: any) => {
-          const formattedTime = item.createdAt
-            ? dayjs(item.createdAt).format('YYYY-MM-DD HH:mm')
-            : '날짜 없음';
-
-          return {
-            id: item.articleId,
-            userName: item.username,
-            timeAgo: formattedTime,
-            content: item.content,
-            likes: item.likedNum,
-            comments: item.commentNum,
-            isLiked: false,
-            badge: {
-              icon: item.icon,
-              title: item.badgeTitle,
-              description: item.badgeDescription,
-              createdAt: item.createdAt,
-            },
-          };
+        const mapped: Post[] = data.result.content.map((item: any) => ({
+          id: item.articleId,
+          userName: item.username,
+          timeAgo: item.createdAt ? dayjs(item.createdAt).format('YYYY-MM-DD HH:mm') : '날짜 없음',
+          content: item.content,
+          likes: item.likedNum,
+          comments: item.commentNum,
+          isLiked: !!(item.isLiked ?? item.liked ?? item.likedByMe ?? item.isLikedByMe ?? false),
+          badge: {
+            icon: item.icon,
+            title: item.badgeTitle,
+            description: item.badgeDescription,
+            createdAt: item.createdAt,
+          },
+        }));
+        setPosts((prev) => {
+          const map = new Map(prev.map((p) => [p.id, p]));
+          return mapped.map((m) => {
+            const old = map.get(m.id);
+            return old ? { ...m, isLiked: old.isLiked, likes: old.likes } : m;
+          });
         });
-        setPosts(mappedPosts);
       }
-    } catch (err) {
-      console.error('게시글 조회 에러:', err);
+    } catch (e) {
+      console.error('게시글 조회 에러:', e);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchArticles();
-  }, []);
+  }, [fetchArticles]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (activeTab === 'feed') {
+      }
+    }, [activeTab, fetchArticles])
+  );
+
+  // 좋아요 토글 시 로컬 즉시 반영
+  const handleToggleLikeLocal = (id: number) => {
+    setPosts((prev) =>
+      prev.map((p) =>
+        p.id === id
+          ? { ...p, isLiked: !p.isLiked, likes: p.isLiked ? Math.max(0, p.likes - 1) : p.likes + 1 }
+          : p
+      )
+    );
+  };
 
   const handleSubmitShare = async () => {
     await fetchArticles();
@@ -93,11 +102,6 @@ export default function SocialScreen() {
       params.badgeDescription &&
       !shareModalVisible
     ) {
-      setSelectedBadge({
-        icon: params.badgeIcon as string,
-        title: params.badgeTitle as string,
-        description: params.badgeDescription as string,
-      });
       setShareModalVisible(true);
     }
   }, [
@@ -115,11 +119,19 @@ export default function SocialScreen() {
         <TabHeader activeTab={activeTab} setActiveTab={setActiveTab} />
       </View>
 
+      {loading && (
+        <View className="absolute inset-0 items-center justify-center bg-white/50">
+          <ActivityIndicator size="large" color="#8953E0" />
+        </View>
+      )}
+
       <ScrollView
         showsVerticalScrollIndicator={false}
         className="flex-1"
         contentContainerStyle={{ paddingBottom: 100 }}>
-        {activeTab === 'feed' && <ArticleList posts={posts} setPosts={setPosts} />}
+        {activeTab === 'feed' && (
+          <ArticleList posts={posts} setPosts={setPosts} onLikeToggle={handleToggleLikeLocal} />
+        )}
 
         {activeTab === 'friends' && (
           <View className="items-center justify-center py-20">
