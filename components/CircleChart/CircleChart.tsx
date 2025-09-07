@@ -17,18 +17,21 @@ const CircleChart: React.FC<EmotionCircleChartProps> = ({
   const circumference = 2 * Math.PI * radius;
   const center = size / 2;
 
-  const totalRatio = negativeRatio + positiveRatio;
-  const adjustedNegativeRatio =
-    totalRatio > 100 ? (negativeRatio / totalRatio) * 100 : negativeRatio;
-  const adjustedPositiveRatio =
-    totalRatio > 100 ? (positiveRatio / totalRatio) * 100 : positiveRatio;
+  // 퍼센트 값 변환
+  const negPercent = Math.round(negativeRatio * 100);
+  const posPercent = Math.round(positiveRatio * 100);
 
-  const negLength = (adjustedNegativeRatio / 100) * circumference;
-  const posLength = (adjustedPositiveRatio / 100) * circumference;
+  // 총합 보정
+  const totalPercent = negPercent + posPercent;
+  const adjustedNeg = totalPercent > 100 ? (negPercent / totalPercent) * 100 : negPercent;
+  const adjustedPos = totalPercent > 100 ? (posPercent / totalPercent) * 100 : posPercent;
+
+  const negLength = (adjustedNeg / 100) * circumference;
+  const posLength = (adjustedPos / 100) * circumference;
 
   return (
     <Svg width={size} height={size}>
-      {/* 회색 배경 */}
+      {/* 기본 회색 */}
       <Circle
         cx={center}
         cy={center}
@@ -38,8 +41,8 @@ const CircleChart: React.FC<EmotionCircleChartProps> = ({
         fill="none"
       />
 
-      {/* 긍정(오른쪽) */}
-      {adjustedPositiveRatio > 0 && (
+      {/* 긍정 */}
+      {adjustedPos > 0 && (
         <Circle
           cx={center}
           cy={center}
@@ -54,8 +57,8 @@ const CircleChart: React.FC<EmotionCircleChartProps> = ({
         />
       )}
 
-      {/* 부정(왼쪽)*/}
-      {adjustedNegativeRatio > 0 && (
+      {/* 부정 */}
+      {adjustedNeg > 0 && (
         <Circle
           cx={center}
           cy={center}
@@ -64,7 +67,7 @@ const CircleChart: React.FC<EmotionCircleChartProps> = ({
           strokeWidth={strokeWidth}
           fill="none"
           strokeDasharray={`${negLength} ${circumference}`}
-          strokeDashoffset={-negLength}
+          strokeDashoffset={-posLength}
           transform={`rotate(-90 ${center} ${center})`}
           strokeLinecap="butt"
         />

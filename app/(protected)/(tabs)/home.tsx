@@ -121,10 +121,9 @@ export default function Home() {
         console.log('📍 녹음 파일 경로:', uri);
 
         setRecordingInstance(null);
-        console.log('recordingInstance stopped and set to null');
       }
       setRecording(false);
-      console.log('setRecording(false) called');
+      console.log('녹음 정지');
     } catch (error) {
       setRecording(false);
       setRecordingInstance(null);
@@ -209,8 +208,6 @@ export default function Home() {
 
       const rawBody = await response.text();
       const data = JSON.parse(rawBody);
-      console.log('Presigned URL 응답:', data);
-
       return { uploadUrl: data.result.presignedUrl, recordId: data.result.recordId };
     } catch (error) {
       console.error('Presigned URL 요청 실패:', error);

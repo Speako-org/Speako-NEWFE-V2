@@ -70,6 +70,10 @@ export default function RecordDetail() {
     return (
       <View className="flex-1 items-center justify-center bg-white">
         <Text className="text-red-500">분석 데이터를 불러올 수 없습니다.</Text>
+
+        <TouchableOpacity onPress={() => router.back()} className="rounded bg-[#8962c8] px-4 py-2">
+          <Text className="font-semibold text-white">이전 화면으로</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -108,16 +112,18 @@ export default function RecordDetail() {
           <View className="w-full flex-row justify-between">
             <View>
               {[
-                { label: '부정적 표현', value: `${analysis.negativeRatio}%` },
-                { label: '긍정적 표현', value: `${analysis.positiveRatio}%` },
+                { label: '부정적 표현', value: Math.round(analysis.negativeRatio * 100) },
+                { label: '긍정적 표현', value: Math.round(analysis.positiveRatio * 100) },
                 {
                   label: '기타',
-                  value: `${100 - (analysis.negativeRatio + analysis.positiveRatio)}%`,
+                  value: Math.round(
+                    100 - (analysis.negativeRatio * 100 + analysis.positiveRatio * 100)
+                  ),
                 },
               ].map((item, idx) => (
                 <View key={idx} className="my-[5px] w-[190px] flex-row justify-between text-[13px]">
                   <Text>{item.label}</Text>
-                  <Text>{item.value}</Text>
+                  <Text>{item.value}%</Text>
                 </View>
               ))}
             </View>
