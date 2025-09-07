@@ -49,11 +49,9 @@ export default function PostCard({
 
   const handleLikeToggle = async () => {
     try {
-      if (post.isLiked) {
-        await unlikeArticle(post.id); // 취소
-      } else {
-        await likeArticle(post.id); // 추가
-      }
+      if (post.isLiked) await unlikeArticle(post.id);
+      else await likeArticle(post.id);
+
       onLikeToggle(post.id);
     } catch (err) {
       console.error(err);

@@ -50,7 +50,8 @@
     "react-native-svg": "^15.11.2",
     "react-native-web": "^0.20.0",
     "victory-native": "^41.17.1",
-    "zustand": "^4.5.1"
+    "zustand": "^4.5.1",
+    "@react-native-async-storage/async-storage": "2.1.2"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
