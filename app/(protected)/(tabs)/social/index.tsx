@@ -30,6 +30,7 @@ export default function SocialScreen() {
 
   const [userKey] = useState<string>('me');
 
+  const [currentArticleId, setCurrentArticleId] = useState<number | null>(null);
   const [likedSet, setLikedSet] = useState<Set<number>>(new Set());
 
   useEffect(() => {
@@ -126,6 +127,16 @@ export default function SocialScreen() {
     });
   };
 
+  const openComments = async (articleId: number) => {
+    setCurrentArticleId(articleId);
+    setCommentModalVisible(true);
+  };
+
+  const addComment = async () => {
+    if (!currentArticleId || !commentText.trim()) return;
+    setCommentText('');
+  };
+
   const [shareModalVisible, setShareModalVisible] = useState(false);
   const handleSubmitShare = async () => {
     await fetchArticles();
@@ -150,7 +161,12 @@ export default function SocialScreen() {
         className="flex-1"
         contentContainerStyle={{ paddingBottom: 100 }}>
         {activeTab === 'feed' && (
-          <ArticleList posts={posts} setPosts={setPosts} onLikeToggle={handleToggleLikeLocal} />
+          <ArticleList
+            posts={posts}
+            setPosts={setPosts}
+            onLikeToggle={handleToggleLikeLocal}
+            onOpenComments={openComments}
+          />
         )}
 
         {activeTab === 'friends' && (
@@ -166,7 +182,7 @@ export default function SocialScreen() {
         commentText={commentText}
         setCommentText={setCommentText}
         onClose={() => setCommentModalVisible(false)}
-        onAddComment={() => {}}
+        onAddComment={addComment}
       />
 
       <ShareBadgeModal

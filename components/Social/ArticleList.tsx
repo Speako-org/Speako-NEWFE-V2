@@ -7,11 +7,18 @@ interface ArticleListProps {
   posts: Post[];
   setPosts: Dispatch<SetStateAction<Post[]>>;
   onLikeToggle: (id: number) => void;
+  onOpenComments: (id: number) => void;
 }
 
-export default function ArticleList({ posts, setPosts, onLikeToggle }: ArticleListProps) {
+export default function ArticleList({
+  posts,
+  setPosts,
+  onLikeToggle,
+  onOpenComments,
+}: ArticleListProps) {
   const handleCommentPress = (id: number) => {
-    console.log('댓글 눌림', id);
+    onOpenComments(id);
+    console.log('댓글 눌림. 게시글 Id:', id);
   };
 
   const handleDeletePost = (articleId: number) => {

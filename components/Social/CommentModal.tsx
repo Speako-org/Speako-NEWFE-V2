@@ -37,7 +37,7 @@ export default function CommentModal({
 }: CommentModalProps) {
   return (
     <Modal visible={visible} animationType="none" transparent onRequestClose={onClose}>
-      <Pressable className="flex-1 bg-black bg-opacity-50" onPress={onClose}>
+      <Pressable className="flex-1 bg-black/20" onPress={onClose}>
         <Pressable
           onPress={(e) => e.stopPropagation()}
           style={{ height: '80%' }}
@@ -57,7 +57,7 @@ export default function CommentModal({
               {comments.map((comment) => (
                 <View key={comment.id} className="mb-4">
                   <View className="mb-2 flex-row items-start">
-                    <View className="mr-3 mt-1 h-8 w-8 rounded-full bg-gray-300" />
+                    <View className="mr-3 h-10 w-10 rounded-full bg-gray-300" />
                     <View className="flex-1">
                       <View className="mb-1 flex-row items-center">
                         <Text className="font-medium">{comment.userName}</Text>
@@ -71,7 +71,7 @@ export default function CommentModal({
             </ScrollView>
 
             {/* 입력창 */}
-            <View className="border-t border-gray-200 p-4">
+            <View className="border-t border-gray-200 p-4 pb-8">
               <View className="flex-row items-center">
                 <View className="flex-1 rounded-full bg-gray-100 px-4 py-3">
                   <TextInput
