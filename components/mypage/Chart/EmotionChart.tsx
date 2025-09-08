@@ -88,12 +88,6 @@ const EmotionChart = ({ onShowInfoModal }: EmotionChartProps) => {
     legend: [],
   };
 
-  reversedStats.forEach((stat, idx) => {
-    console.log(
-      `월: ${stat.month}월, positive: ${stat.avgPositiveRatio * 100}, negative: ${stat.avgNegativeRatio * 100}`
-    );
-  });
-
   return (
     <View className="">
       {/* Header */}

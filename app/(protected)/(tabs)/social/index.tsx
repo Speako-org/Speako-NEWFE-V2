@@ -11,11 +11,17 @@ import TabHeader from '~/components/Social/TabHeader';
 import FAButton from '~/components/Social/FAButton';
 import ArticleList from '~/components/Social/ArticleList';
 import { Post } from '~/components/Social/PostCard';
+
+import { useState } from 'react';
+import { useLocalSearchParams } from 'expo-router';
 import { loadLikedSet, saveLikedSet, toggleInSet } from '~/utils/likeStore';
 import { useComments, useAddComment, useDeleteComment } from '~/hooks/useComments';
 
 export default function SocialScreen() {
-  useLocalSearchParams();
+  const params = useLocalSearchParams();
+  const [shareModalVisible, setShareModalVisible] = useState(false);
+}
+
   const {
     activeTab,
     setActiveTab,
@@ -26,44 +32,98 @@ export default function SocialScreen() {
   } = useSocial();
 
   const [posts, setPosts] = useState<Post[]>([]);
-  const [loading, setLoading] = useState(false);
 
-  const [userKey] = useState<string>('me');
-  const [currentArticleId, setCurrentArticleId] = useState<number | null>(null);
-  const [likedSet, setLikedSet] = useState<Set<number>>(new Set());
+const [userKey] = useState<string>('me');
+const [currentArticleId, setCurrentArticleId] = useState<number | null>(null);
+const [likedSet, setLikedSet] = useState<Set<number>>(new Set());
 
-  // TanStack Query
-  const { data: comments = [], isLoading: commentsLoading } = useComments(currentArticleId);
-  const addComment = useAddComment(currentArticleId);
+// TanStack Query
+const { data: comments = [], isLoading: commentsLoading } = useComments(currentArticleId);
+const addComment = useAddComment(currentArticleId);
 
-  const decComments = () =>
-    setPosts((prev) =>
-      prev.map((p) =>
-        p.id === currentArticleId ? { ...p, comments: Math.max(0, p.comments - 1) } : p
-      )
-    );
+// 댓글 수 증감 콜백 (낙관적/롤백용)
+const decComments = () =>
+  setPosts((prev) =>
+    prev.map((p) =>
+      p.id === currentArticleId ? { ...p, comments: Math.max(0, p.comments - 1) } : p
+    )
+  );
 
-  const incComments = () =>
-    setPosts((prev) =>
-      prev.map((p) => (p.id === currentArticleId ? { ...p, comments: p.comments + 1 } : p))
-    );
+const incComments = () =>
+  setPosts((prev) =>
+    prev.map((p) => (p.id === currentArticleId ? { ...p, comments: p.comments + 1 } : p))
+  );
 
-  const deleteCommentMutation = useDeleteComment(currentArticleId, decComments, incComments);
+const deleteCommentMutation = useDeleteComment(currentArticleId, decComments, incComments);
 
-  useEffect(() => {
-    (async () => {
-      const loaded = await loadLikedSet(userKey);
-      setLikedSet(loaded);
-    })();
-  }, [userKey]);
+useEffect(() => {
+  (async () => {
+    const loaded = await loadLikedSet(userKey);
+    setLikedSet(loaded);
+  })();
+}, [userKey]);
 
-  useEffect(() => {
-    const fetchArticles = async () => {
-      setLoading(true);
-      try {
-        const accessToken = await SecureStore.getItemAsync('accessToken');
-        const res = await fetch('https://speako.site/api/articles/list?size=10', {
-          headers: { Authorization: `Bearer ${accessToken}` },
+const fetchArticles = async () => {
+  setLoading(true);
+  try {
+    const accessToken = await SecureStore.getItemAsync('accessToken');
+    const res = await fetch('https://speako.site/api/articles/list?size=10', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    const data = await res.json();
+
+    if (data.isSuccess) {
+      const mappedPosts: Post[] = data.result.content.map((item: any) => {
+        const id = Number(item.articleId);
+        const formattedTime = item.createdAt
+          ? dayjs(item.createdAt).format('YYYY-MM-DD HH:mm')
+          : '날짜 없음';
+
+        const serverLiked = !!(
+          item.isLiked ?? item.liked ?? item.likedByMe ?? item.isLikedByMe ?? false
+        );
+        const isLiked = likedSet.has(id) || serverLiked;
+
+        return {
+          id,
+          userName: item.username,
+          timeAgo: formattedTime,
+          content: item.content,
+          likes: item.likedNum,
+          comments: item.commentNum,
+          isLiked,
+          badge: {
+            icon: item.icon,
+            title: item.badgeTitle,
+            description: item.badgeDescription,
+            createdAt: item.createdAt,
+          },
+        } as Post;
+      });
+
+      setPosts((prev) => {
+        const prevMap = new Map(prev.map((p) => [p.id, p]));
+        return mappedPosts.map((m) => {
+          const old = prevMap.get(m.id);
+          return old ? { ...m, likes: old.likes } : m;
+        });
+      });
+
+      const mustAdd = mappedPosts.filter((p) => p.isLiked && !likedSet.has(p.id)).map((p) => p.id);
+      if (mustAdd.length > 0) {
+        const next = new Set(likedSet);
+        mustAdd.forEach((id) => next.add(id));
+        setLikedSet(next);
+        saveLikedSet(userKey, next);
+      }
+    }
+  } catch (e) {
+    console.error('게시글 조회 에러:', e);
+  } finally {
+    setLoading(false);
+  }
+};
+
         });
         const data = await res.json();
         if (data.isSuccess) {
@@ -103,25 +163,30 @@ export default function SocialScreen() {
       } finally {
         setLoading(false);
       }
-    };
-    fetchArticles();
-  }, [likedSet, userKey]);
+useEffect(() => {
+  const run = async () => {
+    await fetchArticles();
+  };
+  run();
+}, [likedSet, userKey]);
 
   const handleToggleLikeLocal = (id: number) => {
-    setPosts((prev) =>
-      prev.map((p) =>
-        p.id === id
-          ? { ...p, isLiked: !p.isLiked, likes: p.isLiked ? Math.max(0, p.likes - 1) : p.likes + 1 }
-          : p
-      )
-    );
-    setLikedSet((prev) => {
-      const current = posts.find((p) => p.id === id);
-      const nextLiked = !(current?.isLiked ?? false);
-      const next = toggleInSet(prev, id, nextLiked);
-      saveLikedSet(userKey, next);
-      return next;
-    });
+
+  setPosts((prev) =>
+    prev.map((p) =>
+      p.id === id
+        ? { ...p, isLiked: !p.isLiked, likes: p.isLiked ? Math.max(0, p.likes - 1) : p.likes + 1 }
+        : p
+    )
+  );
+  setLikedSet((prev) => {
+    const current = posts.find((p) => p.id === id);
+    const nextLiked = !(current?.isLiked ?? false);
+    const next = toggleInSet(prev, id, nextLiked);
+    saveLikedSet(userKey, next);
+    return next;
+  });
+};
   };
 
   const openComments = (articleId: number) => {
@@ -135,16 +200,36 @@ export default function SocialScreen() {
     setCommentText('');
   };
 
-  const handleAddComment = () => {
-    if (!commentText.trim()) return;
-    addComment.mutate(commentText.trim());
-    setCommentText('');
-    setPosts((prev) =>
-      prev.map((p) => (p.id === currentArticleId ? { ...p, comments: p.comments + 1 } : p))
-    );
-  };
+const handleAddComment = () => {
+  if (!commentText.trim()) return;
+  addComment.mutate(commentText.trim());
+  setCommentText('');
+  setPosts((prev) =>
+    prev.map((p) =>
+      p.id === currentArticleId ? { ...p, comments: p.comments + 1 } : p
+    )
+  );
+};
 
-  const [shareModalVisible, setShareModalVisible] = useState(false);
+const [shareModalVisible, setShareModalVisible] = useState(false);
+
+useEffect(() => {
+  if (
+    params?.showShareModal === 'true' &&
+    params?.badgeIcon &&
+    params?.badgeTitle &&
+    params?.badgeDescription &&
+    !shareModalVisible
+  ) {
+    setShareModalVisible(true);
+  }
+}, [
+  params?.showShareModal,
+  params?.badgeIcon,
+  params?.badgeTitle,
+  params?.badgeDescription,
+  shareModalVisible,
+]);
 
   return (
     <SafeAreaView className="relative flex-1 bg-white">

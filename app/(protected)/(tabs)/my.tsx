@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, Image, ScrollView, TextInput, Modal } from 'react-native';
+import { View, Text, TouchableOpacity, Image, ScrollView, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import EmotionChart from '../../../components/mypage/Chart/EmotionChart';
@@ -11,15 +11,12 @@ import {
   Achievement as AchievementType,
   MonthlyStat,
 } from '../../../api/types/statistic';
-import { apiClient } from '../../../api/client';
 
 const Mypage = () => {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'stats' | 'progress' | 'achievement'>('stats');
   const [profileData, setProfileData] = useState<AchievementType | null>(null);
   const [monthlyStats, setMonthlyStats] = useState<MonthlyStat[] | null>(null);
-  const [editedComment, setEditedComment] = useState('');
-  const [showEditModal, setShowEditModal] = useState(false);
   const [showImprovementModal, setShowImprovementModal] = useState(false);
   const [showMonthlyStatsModal, setShowMonthlyStatsModal] = useState(false);
   const [showEmotionChartModal, setShowEmotionChartModal] = useState(false);
@@ -49,34 +46,7 @@ const Mypage = () => {
   };
 
   const handleEditComment = () => {
-    setEditedComment(profileData?.selfComment || '');
-    setShowEditModal(true);
-  };
-
-  const handleSaveComment = async () => {
-    try {
-      const response = await apiClient.patch<{ isSuccess: boolean; message?: string }>(
-        '/api/users-info/self-comment',
-        {
-          selfComment: editedComment,
-        }
-      );
-
-      if (response.isSuccess) {
-        // 성공적으로 업데이트된 경우 로컬 상태도 업데이트
-        if (profileData) {
-          setProfileData({
-            ...profileData,
-            selfComment: editedComment,
-          });
-        }
-        setShowEditModal(false);
-      } else {
-        console.error('소개글 업데이트 실패:', response.message);
-      }
-    } catch (error) {
-      console.error('소개글 업데이트 실패:', error);
-    }
+    router.push({ pathname: '/profile-edit' as any });
   };
 
   const renderStatsContent = () => (
@@ -170,14 +140,17 @@ const Mypage = () => {
         <View className="mx-[20px] mb-[30px] mt-[15px] rounded-[10px] bg-white px-[15px] pt-5 ">
           {/* Profile Info */}
           <View className="mb-5 flex-row items-center">
-            <Image
-              source={
-                profileData?.profileImageUrl
-                  ? { uri: profileData.profileImageUrl }
-                  : require('../../../assets/default-profile.png')
-              }
-              className="mr-[15px] h-[60px] w-[60px] rounded-full"
-            />
+            <View className="mr-[15px] h-[60px] w-[60px] items-center justify-center rounded-full border-2 border-gray-200 bg-gray-100">
+              <Image
+                source={
+                  profileData?.profileImageUrl
+                    ? { uri: profileData.profileImageUrl }
+                    : require('../../../assets/default-profile.png')
+                }
+                className="h-[52px] w-[52px] rounded-full"
+                resizeMode="cover"
+              />
+            </View>
             <View className="flex-1">
               <View className="mb-2 flex-row items-center">
                 <Text className="mr-[7px] mt-3 text-[18px] font-bold text-black">
@@ -249,34 +222,6 @@ const Mypage = () => {
         {activeTab === 'achievement' && renderAchievementContent()}
       </ScrollView>
 
-      {/* 소개글 수정 모달 */}
-      <Modal visible={showEditModal} transparent={true} animationType="fade">
-        <View className="flex-1 bg-black/50">
-          <View className="flex-1 items-center justify-center px-8">
-            <View className="w-full max-w-sm rounded-2xl bg-white p-6">
-              <Text className="mb-4 text-center text-lg font-bold">소개글 수정</Text>
-              <TextInput
-                className="mb-6 border-b border-gray-300 p-3 text-base"
-                placeholder="소개글을 입력하세요"
-                value={editedComment}
-                onChangeText={setEditedComment}
-                multiline
-                maxLength={100}
-                style={{ minHeight: 30 }}
-              />
-              <View className="flex-row space-x-3">
-                <TouchableOpacity className="flex-1" onPress={() => setShowEditModal(false)}>
-                  <Text className="text-center text-lg font-semibold text-gray-700">취소</Text>
-                </TouchableOpacity>
-                <TouchableOpacity className="flex-1" onPress={handleSaveComment}>
-                  <Text className="text-center text-lg font-semibold text-[#8953E0]">저장</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
       {/* 개선율 정보 모달 */}
       <Modal visible={showImprovementModal} transparent={true} animationType="fade">
         <View className="flex-1 bg-black/50">
@@ -291,7 +236,7 @@ const Mypage = () => {
                 paddingBottom: Math.max(100, 50),
               }}>
               <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()}>
-                <View className="w-90 rounded-md border border-gray-300 bg-[#ffffff] p-5">
+                <View className="w-90 rounded-xl border border-gray-300 bg-[#ffffff] p-5">
                   <Text className="text-left text-sm text-gray-700">
                     성과에서의 뱃지를 기준으로 개선율이 올라갑니다.{'\n'}
                     <Text className="text-base font-bold text-gray-800">
@@ -321,7 +266,7 @@ const Mypage = () => {
                 paddingBottom: Math.max(100, 50),
               }}>
               <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()}>
-                <View className="w-90 rounded-md  bg-[#ffffff] p-5">
+                <View className="w-90 rounded-xl  bg-[#ffffff] p-5">
                   <Text className="text-left text-sm text-gray-700">
                     월간 성과는 이번 달의 기록 데이터를 기반으로 합니다.{'\n\n'}
                     <Text className="text-base font-bold text-gray-800">긍정 표현 사용률</Text> -
@@ -350,7 +295,7 @@ const Mypage = () => {
                 paddingBottom: Math.max(100, 50),
               }}>
               <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()}>
-                <View className="w-90 rounded-md bg-[#ffffff] p-5">
+                <View className="w-90 rounded-xl bg-[#ffffff] p-5">
                   <Text className="text-left text-sm text-gray-700">
                     언어 습관 그래프는 사용자의{' '}
                     <Text className="text-base font-bold text-gray-800">월별 언어 습관 패턴</Text>을
