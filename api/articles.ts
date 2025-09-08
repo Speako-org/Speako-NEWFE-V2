@@ -43,3 +43,50 @@ export async function unlikeArticle(articleId: number) {
 
   return res.json().catch(() => null);
 }
+
+// 댓글 작성
+export async function addComment(articleId: number, content: string) {
+  const token = await SecureStore.getItemAsync('accessToken');
+  if (!token) throw new Error('액세스 토큰 없음');
+
+  const res = await fetch(`${BASE_URL}/articles/comment`, {
+    method: 'POST',
+    headers: {
+      accept: '*/*',
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      content,
+      article_id: articleId,
+    }),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`댓글 작성 실패: ${res.status} ${errText}`);
+  }
+
+  return res.json();
+}
+
+// 댓글 목록 조회
+export async function fetchComments(articleId: number, size: number = 10) {
+  const token = await SecureStore.getItemAsync('accessToken');
+  if (!token) throw new Error('액세스 토큰 없음');
+
+  const res = await fetch(`${BASE_URL}/articles/comment/${articleId}?size=${size}`, {
+    method: 'GET',
+    headers: {
+      accept: '*/*',
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`댓글 조회 실패: ${res.status} ${errText}`);
+  }
+
+  return res.json();
+}

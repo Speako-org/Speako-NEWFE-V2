@@ -1,6 +1,6 @@
 import { SafeAreaView, View, Text, ScrollView, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import * as SecureStore from 'expo-secure-store';
 import dayjs from 'dayjs';
 
@@ -12,9 +12,10 @@ import FAButton from '~/components/Social/FAButton';
 import ArticleList from '~/components/Social/ArticleList';
 import { Post } from '~/components/Social/PostCard';
 import { loadLikedSet, saveLikedSet, toggleInSet } from '~/utils/likeStore';
+import { useComments, useAddComment } from '~/hooks/useComments';
 
 export default function SocialScreen() {
-  const params = useLocalSearchParams();
+  useLocalSearchParams();
   const {
     activeTab,
     setActiveTab,
@@ -22,16 +23,18 @@ export default function SocialScreen() {
     setCommentModalVisible,
     commentText,
     setCommentText,
-    comments,
   } = useSocial();
 
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(false);
 
   const [userKey] = useState<string>('me');
-
   const [currentArticleId, setCurrentArticleId] = useState<number | null>(null);
   const [likedSet, setLikedSet] = useState<Set<number>>(new Set());
+
+  // TanStack Query
+  const { data: comments = [], isLoading: commentsLoading } = useComments(currentArticleId);
+  const addComment = useAddComment(currentArticleId);
 
   useEffect(() => {
     (async () => {
@@ -40,76 +43,57 @@ export default function SocialScreen() {
     })();
   }, [userKey]);
 
-  const fetchArticles = useCallback(async () => {
-    setLoading(true);
-    try {
-      const accessToken = await SecureStore.getItemAsync('accessToken');
-      const res = await fetch('https://speako.site/api/articles/list?size=10', {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
-      const data = await res.json();
-
-      if (data.isSuccess) {
-        const mapped: Post[] = data.result.content.map((item: any) => {
-          const id = Number(item.articleId);
-          const serverLiked = !!(
-            item.isLiked ??
-            item.liked ??
-            item.likedByMe ??
-            item.isLikedByMe ??
-            false
-          );
-
-          const isLiked = likedSet.has(id) || serverLiked;
-
-          return {
-            id,
-            userName: item.username,
-            timeAgo: item.createdAt
-              ? dayjs(item.createdAt).format('YYYY-MM-DD HH:mm')
-              : '날짜 없음',
-            content: item.content,
-            likes: item.likedNum,
-            comments: item.commentNum,
-            isLiked,
-            badge: {
-              icon: item.icon,
-              title: item.badgeTitle,
-              description: item.badgeDescription,
-              createdAt: item.createdAt,
-            },
-          };
+  useEffect(() => {
+    const fetchArticles = async () => {
+      setLoading(true);
+      try {
+        const accessToken = await SecureStore.getItemAsync('accessToken');
+        const res = await fetch('https://speako.site/api/articles/list?size=10', {
+          headers: { Authorization: `Bearer ${accessToken}` },
         });
+        const data = await res.json();
+        if (data.isSuccess) {
+          const mapped: Post[] = data.result.content.map((item: any) => {
+            const id = Number(item.articleId);
+            const serverLiked = !!(
+              item.isLiked ??
+              item.liked ??
+              item.likedByMe ??
+              item.isLikedByMe ??
+              false
+            );
+            const isLiked = likedSet.has(id) || serverLiked;
 
-        setPosts((prev) => {
-          const map = new Map(prev.map((p) => [p.id, p]));
-          return mapped.map((m) => {
-            const old = map.get(m.id);
-            return old ? { ...m, likes: old.likes } : m;
+            return {
+              id,
+              userName: item.username,
+              timeAgo: item.createdAt
+                ? dayjs(item.createdAt).format('YYYY-MM-DD HH:mm')
+                : '날짜 없음',
+              content: item.content,
+              likes: item.likedNum,
+              comments: item.commentNum,
+              isLiked,
+              badge: {
+                icon: item.icon,
+                title: item.badgeTitle,
+                description: item.badgeDescription,
+                createdAt: item.createdAt,
+              },
+            };
           });
-        });
-
-        const mustAdd = mapped.filter((p) => p.isLiked && !likedSet.has(p.id)).map((p) => p.id);
-        if (mustAdd.length > 0) {
-          const next = new Set(likedSet);
-          mustAdd.forEach((id) => next.add(id));
-          setLikedSet(next);
-          saveLikedSet(userKey, next);
+          setPosts(mapped);
         }
+      } catch (e) {
+        console.error('게시글 조회 에러:', e);
+      } finally {
+        setLoading(false);
       }
-    } catch (e) {
-      console.error('게시글 조회 에러:', e);
-    } finally {
-      setLoading(false);
-    }
+    };
+    fetchArticles();
   }, [likedSet, userKey]);
 
-  useEffect(() => {
-    fetchArticles();
-  }, [fetchArticles]);
-
   const handleToggleLikeLocal = (id: number) => {
-    // UI 즉시 반영
     setPosts((prev) =>
       prev.map((p) =>
         p.id === id
@@ -117,7 +101,6 @@ export default function SocialScreen() {
           : p
       )
     );
-
     setLikedSet((prev) => {
       const current = posts.find((p) => p.id === id);
       const nextLiked = !(current?.isLiked ?? false);
@@ -127,21 +110,27 @@ export default function SocialScreen() {
     });
   };
 
-  const openComments = async (articleId: number) => {
-    setCurrentArticleId(articleId);
+  const openComments = (articleId: number) => {
     setCommentModalVisible(true);
+    setCurrentArticleId(articleId);
   };
 
-  const addComment = async () => {
-    if (!currentArticleId || !commentText.trim()) return;
+  const closeComments = () => {
+    setCommentModalVisible(false);
+    setCurrentArticleId(null);
     setCommentText('');
   };
 
-  const [shareModalVisible, setShareModalVisible] = useState(false);
-  const handleSubmitShare = async () => {
-    await fetchArticles();
-    setShareModalVisible(false);
+  const handleAddComment = () => {
+    if (!commentText.trim()) return;
+    addComment.mutate(commentText.trim());
+    setCommentText('');
+    setPosts((prev) =>
+      prev.map((p) => (p.id === currentArticleId ? { ...p, comments: p.comments + 1 } : p))
+    );
   };
+
+  const [shareModalVisible, setShareModalVisible] = useState(false);
 
   return (
     <SafeAreaView className="relative flex-1 bg-white">
@@ -168,7 +157,6 @@ export default function SocialScreen() {
             onOpenComments={openComments}
           />
         )}
-
         {activeTab === 'friends' && (
           <View className="items-center justify-center py-20">
             <Text className="text-gray-500">준비 중</Text>
@@ -181,14 +169,14 @@ export default function SocialScreen() {
         comments={comments}
         commentText={commentText}
         setCommentText={setCommentText}
-        onClose={() => setCommentModalVisible(false)}
-        onAddComment={addComment}
+        onClose={closeComments}
+        onAddComment={handleAddComment}
       />
 
       <ShareBadgeModal
         visible={shareModalVisible}
         onClose={() => setShareModalVisible(false)}
-        onSubmit={handleSubmitShare}
+        onSubmit={() => setShareModalVisible(false)}
       />
 
       <FAButton onPress={() => setShareModalVisible(true)} />
