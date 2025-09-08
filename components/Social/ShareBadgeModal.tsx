@@ -26,7 +26,17 @@ export interface Badge {
 interface ShareBadgeModalProps {
   visible: boolean;
   onClose: () => void;
-  onSubmit: (content: string, badge: Badge) => void;
+  onSubmit: (
+    content: string,
+    badge: Badge,
+    server?: {
+      articleId?: number;
+      username?: string;
+      createdAt?: string;
+      likedNum?: number;
+      commentNum?: number;
+    }
+  ) => void;
 }
 
 export default function ShareBadgeModal({ visible, onClose, onSubmit }: ShareBadgeModalProps) {
@@ -93,12 +103,11 @@ export default function ShareBadgeModal({ visible, onClose, onSubmit }: ShareBad
 
       const data = await res.json();
       if (res.ok && data.isSuccess) {
-        onSubmit(content, selectedBadge);
+        onSubmit(content, selectedBadge, data.result);
+
         setContent('');
-
-        const firstAvailable = badges.find((b: Badge) => !b.posted) || null;
+        const firstAvailable = badges.find((b) => !b.posted) || null;
         setSelectedBadge(firstAvailable);
-
         onClose();
       } else {
         alert(`글 작성 실패: ${data.message}`);

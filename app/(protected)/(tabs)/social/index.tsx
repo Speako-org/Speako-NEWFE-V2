@@ -230,7 +230,28 @@ export default function SocialScreen() {
       <ShareBadgeModal
         visible={shareModalVisible}
         onClose={() => setShareModalVisible(false)}
-        onSubmit={() => setShareModalVisible(false)}
+        onSubmit={(content, badge, server) => {
+          const newPost: Post = {
+            id: Number(server?.articleId ?? Date.now()),
+            userName: server?.username ?? '나',
+            timeAgo: dayjs(server?.createdAt ?? new Date()).format('YYYY-MM-DD HH:mm'),
+            content,
+            likes: server?.likedNum ?? 0,
+            comments: server?.commentNum ?? 0,
+            isLiked: false,
+            badge: {
+              icon: badge.icon,
+              title: badge.title,
+              description: badge.description,
+              createdAt: server?.createdAt ?? new Date().toISOString(),
+            },
+          };
+
+          setPosts((prev) => [newPost, ...prev]);
+          setShareModalVisible(false);
+
+          fetchArticles();
+        }}
       />
 
       <FAButton onPress={() => setShareModalVisible(true)} />
