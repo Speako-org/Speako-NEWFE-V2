@@ -2,6 +2,7 @@ import { View, Text, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import BadgeCard, { Badge } from './BadgeCard';
 import { useMemo, useState } from 'react';
+import { likeArticle, unlikeArticle } from '~/api/articles';
 
 export interface Post {
   id: number;
@@ -45,6 +46,17 @@ export default function PostCard({
 
   const avatarUri = useMemo(() => post.ImageType?.trim() || '', [post.ImageType]);
   const showImage = !!avatarUri && !avatarError;
+
+  const handleLikeToggle = async () => {
+    try {
+      if (post.isLiked) await unlikeArticle(post.id);
+      else await likeArticle(post.id);
+
+      onLikeToggle(post.id);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   return (
     <View className="mx-6 mb-4 rounded-2xl border border-gray-200 bg-white p-5">
@@ -96,9 +108,7 @@ export default function PostCard({
 
       {/* 좋아요 / 댓글 / 공유 */}
       <View className="ml-1 flex-row items-center">
-        <TouchableOpacity
-          className="mr-3 w-[35px] flex-row items-center"
-          onPress={() => onLikeToggle(post.id)}>
+        <TouchableOpacity onPress={handleLikeToggle} className="mr-3 flex-row items-center">
           <Ionicons
             name={post.isLiked ? 'heart' : 'heart-outline'}
             size={19}
@@ -106,6 +116,7 @@ export default function PostCard({
           />
           <Text className="ml-1 text-lg text-gray-600">{post.likes}</Text>
         </TouchableOpacity>
+
         <TouchableOpacity
           className="mr-3 flex-row items-center"
           onPress={() => onCommentPress(post.id)}>

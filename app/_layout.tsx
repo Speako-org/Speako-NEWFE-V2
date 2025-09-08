@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import { View, Text } from 'react-native';
 import { loadFonts } from '../utils/fonts';
 import * as Linking from 'expo-linking';
-import { GestureHandlerRootView } from 'react-native-gesture-handler'; // ✅ 추가
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 export const unstable_settings = {
   initialRouteName: '(tabs)',
@@ -12,6 +13,8 @@ export const unstable_settings = {
 
 export default function RootLayout() {
   const [fontsLoaded, setFontsLoaded] = useState(false);
+
+  const [queryClient] = useState(() => new QueryClient());
 
   useEffect(() => {
     const loadAppFonts = async () => {
@@ -45,8 +48,10 @@ export default function RootLayout() {
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <Slot />
-    </GestureHandlerRootView>
+    <QueryClientProvider client={queryClient}>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <Slot />
+      </GestureHandlerRootView>
+    </QueryClientProvider>
   );
 }
