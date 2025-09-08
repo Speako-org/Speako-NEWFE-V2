@@ -12,7 +12,7 @@ import FAButton from '~/components/Social/FAButton';
 import ArticleList from '~/components/Social/ArticleList';
 import { Post } from '~/components/Social/PostCard';
 import { loadLikedSet, saveLikedSet, toggleInSet } from '~/utils/likeStore';
-import { useComments, useAddComment } from '~/hooks/useComments';
+import { useComments, useAddComment, useDeleteComment } from '~/hooks/useComments';
 
 export default function SocialScreen() {
   useLocalSearchParams();
@@ -35,6 +35,20 @@ export default function SocialScreen() {
   // TanStack Query
   const { data: comments = [], isLoading: commentsLoading } = useComments(currentArticleId);
   const addComment = useAddComment(currentArticleId);
+
+  const decComments = () =>
+    setPosts((prev) =>
+      prev.map((p) =>
+        p.id === currentArticleId ? { ...p, comments: Math.max(0, p.comments - 1) } : p
+      )
+    );
+
+  const incComments = () =>
+    setPosts((prev) =>
+      prev.map((p) => (p.id === currentArticleId ? { ...p, comments: p.comments + 1 } : p))
+    );
+
+  const deleteCommentMutation = useDeleteComment(currentArticleId, decComments, incComments);
 
   useEffect(() => {
     (async () => {
@@ -171,6 +185,7 @@ export default function SocialScreen() {
         setCommentText={setCommentText}
         onClose={closeComments}
         onAddComment={handleAddComment}
+        deleteCommentMutation={deleteCommentMutation}
       />
 
       <ShareBadgeModal

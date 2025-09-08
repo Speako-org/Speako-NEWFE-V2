@@ -90,3 +90,24 @@ export async function fetchComments(articleId: number, size: number = 10) {
 
   return res.json();
 }
+
+// 댓글 삭제
+export async function deleteComment(commentId: number) {
+  const token = await SecureStore.getItemAsync('accessToken');
+  if (!token) throw new Error('액세스 토큰 없음');
+
+  const res = await fetch(`${BASE_URL}/articles/comment/delete/${commentId}`, {
+    method: 'DELETE',
+    headers: {
+      accept: '*/*',
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`댓글 삭제 실패: ${res.status} ${errText}`);
+  }
+
+  return res.json().catch(() => null);
+}

@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
+import type { UseMutationResult } from '@tanstack/react-query';
 
 export interface ServerComment {
   commentId: number;
@@ -34,6 +35,7 @@ interface CommentModalProps {
   setCommentText: (text: string) => void;
   onClose: () => void;
   onAddComment: () => void;
+  deleteCommentMutation: UseMutationResult<any, unknown, number, unknown>;
 }
 
 function formatKSTDate(iso?: string) {
@@ -58,6 +60,7 @@ export default function CommentModal({
   setCommentText,
   onClose,
   onAddComment,
+  deleteCommentMutation,
 }: CommentModalProps) {
   const { height: screenH } = useWindowDimensions();
   const sheetH = Math.round(screenH * SHEET_RATIO);
@@ -154,11 +157,17 @@ export default function CommentModal({
                     <View className="mr-3 h-10 w-10 rounded-full bg-gray-300" />
                   )}
                   <View className="flex-1">
-                    <View className="mb-1 flex-row items-center">
-                      <Text className="font-semibold">{c.username}</Text>
-                      <Text className="ml-2 text-xs text-gray-500">
-                        {formatKSTDate(c.createdAt)}
-                      </Text>
+                    <View className="mb-1 flex-row items-center justify-between">
+                      <View className="flex-row items-center">
+                        <Text className="font-semibold">{c.username}</Text>
+                        <Text className="ml-2 text-xs text-gray-500">
+                          {formatKSTDate(c.createdAt)}
+                        </Text>
+                      </View>
+                      {/* 휴지통 아이콘 */}
+                      <TouchableOpacity onPress={() => deleteCommentMutation.mutate(c.commentId)}>
+                        <Ionicons name="trash-outline" size={16} color="#EF4444" />
+                      </TouchableOpacity>
                     </View>
                     <Text className="text-sm leading-5">{c.content}</Text>
                   </View>

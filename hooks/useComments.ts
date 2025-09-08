@@ -1,6 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchComments, addComment as addCommentApi } from '~/api/articles';
+import { fetchComments, addComment as addCommentApi, deleteComment } from '~/api/articles';
 import type { ServerComment } from '~/components/Social/CommentModal';
+
+type DecreaseCount = () => void;
+type IncreaseCount = () => void;
 
 function sortAscByDate(list: ServerComment[]) {
   return [...list].sort(
@@ -58,6 +61,48 @@ export function useAddComment(articleId: number | null) {
         queryClient.setQueryData(['comments', articleId], ctx.prev);
       }
     },
+    onSettled: () => {
+      if (articleId) {
+        queryClient.invalidateQueries({ queryKey: ['comments', articleId] });
+      }
+    },
+  });
+}
+
+// 댓글 삭제
+export function useDeleteComment(
+  articleId: number | null,
+  onDec?: DecreaseCount,
+  onInc?: IncreaseCount
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (commentId: number) => deleteComment(commentId),
+
+    onMutate: async (commentId: number) => {
+      if (!articleId) return;
+
+      await queryClient.cancelQueries({ queryKey: ['comments', articleId] });
+
+      const prev = queryClient.getQueryData<ServerComment[]>(['comments', articleId]);
+
+      queryClient.setQueryData<ServerComment[]>(['comments', articleId], (old = []) =>
+        old.filter((c) => c.commentId !== commentId)
+      );
+
+      onDec?.();
+
+      return { prev, didDec: !!onDec };
+    },
+
+    onError: (_err, _commentId, ctx) => {
+      if (articleId && ctx?.prev) {
+        queryClient.setQueryData(['comments', articleId], ctx.prev);
+      }
+      if (ctx?.didDec) onInc?.();
+    },
+
     onSettled: () => {
       if (articleId) {
         queryClient.invalidateQueries({ queryKey: ['comments', articleId] });
