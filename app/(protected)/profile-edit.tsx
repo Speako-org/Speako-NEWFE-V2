@@ -96,8 +96,7 @@ const ProfileEdit = () => {
 
       // 프로필 이미지 update API 호출
       if (selectedAvatar !== null) {
-        const imageName = `${selectedAvatar}.png`;
-        const imageResponse = await apiClient.updateProfileImage(imageName);
+        const imageResponse = await apiClient.updateProfileImage(selectedAvatar.toString());
         if (imageResponse.isSuccess) {
           console.log('프로필 이미지 업데이트 성공');
         }
