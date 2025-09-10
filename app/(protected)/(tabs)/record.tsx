@@ -1,7 +1,8 @@
 import { View, Text, ActivityIndicator } from 'react-native';
 import RecordDate from '~/components/RecordDate/RecordDate';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import * as SecureStore from 'expo-secure-store';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 type ApiItem = {
   transcriptionId: number;
@@ -24,63 +25,69 @@ const BASE_URL = 'https://speako.site/api';
 const formatDate = (date: Date) => date.toISOString().split('T')[0];
 
 const calculateDuration = (start: string, end: string) => {
-  const startDate = new Date(start);
-  const endDate = new Date(end);
-  const diffSec = Math.floor((endDate.getTime() - startDate.getTime()) / 1000);
-
+  const s = new Date(start).getTime();
+  const e = new Date(end).getTime();
+  const diffSec = Math.max(0, Math.floor((e - s) / 1000));
   const min = Math.floor(diffSec / 60);
   const sec = diffSec % 60;
-
-  const minStr = min.toString().padStart(2, '0');
-  const secStr = sec.toString().padStart(2, '0');
-
-  return `${minStr}:${secStr}`;
+  return `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
 };
 
+async function fetchRecordsByDate(dateStr: string): Promise<RecordType[]> {
+  const accessToken = await SecureStore.getItemAsync('accessToken');
+  const res = await fetch(`${BASE_URL}/transcriptions/?date=${dateStr}`, {
+    headers: { accept: '*/*', Authorization: `Bearer ${accessToken}` },
+  });
+  const data = await res.json();
+
+  const items: ApiItem[] = data?.result ?? [];
+  return items.map((item) => ({
+    id: String(item.transcriptionId),
+    title: item.title,
+    date: item.startTime?.split('T')[0] ?? dateStr,
+    duration: calculateDuration(item.startTime, item.endTime),
+    status: item.transcriptionStatus ?? 'UNKNOWN',
+  }));
+}
+
 export default function Record() {
-  const [records, setRecords] = useState<RecordType[]>([]);
-  const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const queryClient = useQueryClient();
+  const dateStr = formatDate(selectedDate);
 
-  const fetchRecords = async (date: Date) => {
+  const {
+    data: records = [],
+    isLoading,
+    isFetching,
+  } = useQuery<RecordType[]>({
+    queryKey: ['transcriptions', dateStr],
+    queryFn: () => fetchRecordsByDate(dateStr),
+    refetchInterval: (query) => {
+      const list = query.state.data as RecordType[] | undefined;
+      if (!list) return false;
+
+      const hasInProgress = list.some(
+        (r: RecordType) => r.status && r.status !== 'ANALYSIS_COMPLETED'
+      );
+      return hasInProgress ? 5000 : false;
+    },
+    staleTime: 10_000,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+  });
+
+  const onDeleteRecord = async (id: string) => {
     try {
-      setLoading(true);
-      const accessToken = await SecureStore.getItemAsync('accessToken');
-      const response = await fetch(`${BASE_URL}/transcriptions/?date=${formatDate(date)}`, {
-        method: 'GET',
-        headers: {
-          accept: '*/*',
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-
-      const data = await response.json();
-
-      const mapped: RecordType[] = (data.result || []).map((item: ApiItem) => ({
-        id: String(item.transcriptionId),
-        title: item.title,
-        date: item.startTime.split('T')[0],
-        duration: calculateDuration(item.startTime, item.endTime),
-        status: item.transcriptionStatus ?? 'UNKNOWN',
-      }));
-
-      setRecords(mapped);
+      const token = await SecureStore.getItemAsync('accessToken');
+      // 삭제 API 연결 필요
     } catch (e) {
-      console.error('녹음 기록 불러오기 실패:', e);
-      setRecords([]);
+      console.error('삭제 실패:', e);
     } finally {
-      setLoading(false);
+      queryClient.invalidateQueries({ queryKey: ['transcriptions', dateStr] });
     }
   };
 
-  useEffect(() => {
-    fetchRecords(selectedDate);
-  }, [selectedDate]);
-
-  const onDeleteRecord = async (id: string) => {
-    // 삭제 API 연결
-    setRecords((prev) => prev.filter((r) => r.id !== id));
-  };
+  const loading = isLoading || isFetching;
 
   return (
     <View className="flex-1 bg-[#f2f2f2] pt-[90px]">
