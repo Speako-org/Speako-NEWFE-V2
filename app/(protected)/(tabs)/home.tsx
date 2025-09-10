@@ -1,36 +1,42 @@
 import { useState, useEffect, useRef } from 'react';
 import { Alert, Text, View, TouchableOpacity, Animated } from 'react-native';
 import { Audio, InterruptionModeIOS, InterruptionModeAndroid } from 'expo-av';
-import { formatDateTime } from '../../../utils/formatDataTime';
-import { formatTime } from '../../../utils/formatTime';
-import RecordButton from '../../../components/RecordButton/RecordButton';
-import * as FileSystem from 'expo-file-system';
-import * as SecureStore from 'expo-secure-store';
+
+import RecordButton from '~/components/RecordButton/RecordButton';
+import UploadTranscribeButton from '~/components/UploadTranscribeButton';
+
+import { formatDateTime } from '~/utils/formatDataTime';
+import { formatTime } from '~/utils/formatTime';
 
 export default function Home() {
+  // 녹음 상태
   const [recording, setRecording] = useState(false);
   const [recordTime, setRecordTime] = useState(0);
   const maxRecordTime = 3600; // 1시간 제한
-  const [recordStartTime, setRecordStartTime] = useState<Date | null>(null); // 녹음 시작 시각
-  const [recordEndTime, setRecordEndTime] = useState<Date | null>(null); // 녹음 종료 시각
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [recordStartTime, setRecordStartTime] = useState<Date | null>(null);
+  const [recordEndTime, setRecordEndTime] = useState<Date | null>(null);
   const [recordedUri, setRecordedUri] = useState<string | null>(null);
+
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+
   const [currentDateTime, setCurrentDateTime] = useState(new Date());
+
+  // 오디오 인스턴스
   const [sound, setSound] = useState<Audio.Sound | null>(null);
   const [recordingInstance, setRecordingInstance] = useState<Audio.Recording | null>(null);
+
   const [recordId, setRecordId] = useState<number | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const pulseAnim = useRef(new Animated.Value(1)).current;
 
   const BASE_URL = 'https://speako.site/api';
 
+  // 현재 시각 1초마다 갱신
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentDateTime(new Date());
-    }, 1000);
+    const interval = setInterval(() => setCurrentDateTime(new Date()), 1000);
     return () => clearInterval(interval);
   }, []);
 
+  // 녹음 중 타이머
   useEffect(() => {
     if (recording) {
       intervalRef.current = setInterval(() => {
@@ -52,15 +58,9 @@ export default function Home() {
     };
   }, [recording]);
 
-  // 날짜 형식 'YYYY-MM-DDTHH:MM:SS.000000'
-  const toCustomISOString = (date: Date): string => {
-    const kstTime = new Date(date.getTime() + 9 * 60 * 60 * 1000);
-    return kstTime.toISOString().replace('Z', '').split('.')[0] + '.000000';
-  };
-
+  // 녹음 시작
   const onStartRecord = async () => {
     try {
-      // 기존 녹음 객체가 있으면 완전히 정리
       if (recordingInstance) {
         try {
           await recordingInstance.stopAndUnloadAsync();
@@ -69,15 +69,12 @@ export default function Home() {
         setRecording(false);
       }
 
-      // Audio 모드를 완전히 리셋
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: false,
         playsInSilentModeIOS: false,
         staysActiveInBackground: false,
       });
-
-      // 잠시 대기
-      await new Promise((resolve) => setTimeout(resolve, 300));
+      await new Promise((r) => setTimeout(r, 300));
 
       await Audio.requestPermissionsAsync();
       await Audio.setAudioModeAsync({
@@ -88,9 +85,7 @@ export default function Home() {
         shouldDuckAndroid: true,
         interruptionModeAndroid: InterruptionModeAndroid.DoNotMix,
       });
-
-      // 추가 대기
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await new Promise((r) => setTimeout(r, 100));
 
       setRecordedUri(null);
       const { recording } = await Audio.Recording.createAsync(
@@ -98,7 +93,7 @@ export default function Home() {
       );
       setRecordingInstance(recording);
       setRecordedUri(recording.getURI());
-      setRecordStartTime(new Date()); // 녹음 시작 시간 저장
+      setRecordStartTime(new Date());
       setRecording(true);
     } catch (error) {
       setRecording(false);
@@ -108,8 +103,8 @@ export default function Home() {
     }
   };
 
+  // 녹음 종료
   const onStopRecord = async () => {
-    console.log('onStopRecord called');
     try {
       if (recordingInstance) {
         try {
@@ -117,13 +112,10 @@ export default function Home() {
         } catch {}
         const uri = recordingInstance.getURI();
         setRecordedUri(uri);
-        setRecordEndTime(new Date()); // 녹음 끝나는 시간 저장
-        console.log('📍 녹음 파일 경로:', uri);
-
+        setRecordEndTime(new Date());
         setRecordingInstance(null);
       }
       setRecording(false);
-      console.log('녹음 정지');
     } catch (error) {
       setRecording(false);
       setRecordingInstance(null);
@@ -132,187 +124,42 @@ export default function Home() {
     }
   };
 
+  // 파일명 추출
   const getFileNameFromUri = (uri: string) => {
     const name = uri.split('/').pop();
-    if (!name) return `audio-${Date.now()}.m4a`; // 기본값
-
-    // 확장자 없으면 기본 확장자 추가
+    if (!name) return `audio-${Date.now()}.m4a`;
     return name.includes('.') ? name : `${name}.m4a`;
   };
 
+  // 녹음 중 애니메이션
   useEffect(() => {
     if (recording) {
-      // 애니메이션 시작
       Animated.loop(
         Animated.sequence([
-          Animated.timing(pulseAnim, {
-            toValue: 1.2,
-            duration: 800,
-            useNativeDriver: true,
-          }),
-          Animated.timing(pulseAnim, {
-            toValue: 1,
-            duration: 800,
-            useNativeDriver: true,
-          }),
+          Animated.timing(pulseAnim, { toValue: 1.2, duration: 800, useNativeDriver: true }),
+          Animated.timing(pulseAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
         ])
       ).start();
     } else {
-      // 애니메이션 중지
       pulseAnim.stopAnimation();
       pulseAnim.setValue(1);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recording]);
 
+  // 녹음 재생
   const onPlayRecordedAudio = async () => {
-    if (recordedUri) {
-      try {
-        if (sound) {
-          await sound.unloadAsync();
-        }
-        const { sound: newSound } = await Audio.Sound.createAsync(
-          { uri: recordedUri },
-          { shouldPlay: true }
-        );
-        setSound(newSound);
-      } catch (error) {
-        console.error('Failed to play recording', error);
-        Alert.alert('오류', '녹음을 재생할 수 없습니다.');
-      }
-    }
-  };
-
-  const getPresignedUrl = async (
-    fileName: string,
-    recordId?: number | null
-  ): Promise<{ uploadUrl: string; recordId: number } | null> => {
+    if (!recordedUri) return;
     try {
-      const accessToken = await SecureStore.getItemAsync('accessToken');
-      // console.log('📍 토큰', accessToken);
-
-      const queryParams = recordId
-        ? `recordId=${recordId}&fileName=${encodeURIComponent(fileName)}`
-        : `fileName=${encodeURIComponent(fileName)}`;
-
-      const url = `${BASE_URL}/records/presigned-url?${queryParams}`;
-      console.log('😀 Request URL:', url);
-
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-
-      const rawBody = await response.text();
-      const data = JSON.parse(rawBody);
-      return { uploadUrl: data.result.presignedUrl, recordId: data.result.recordId };
-    } catch (error) {
-      console.error('Presigned URL 요청 실패:', error);
-      Alert.alert('오류', '파일 업로드 URL을 받지 못했습니다.');
-      return null;
-    }
-  };
-
-  const uploadToS3 = async (uri: string, uploadUrl: string): Promise<boolean> => {
-    try {
-      const uploadResponse = await FileSystem.uploadAsync(uploadUrl, uri, {
-        httpMethod: 'PUT',
-        headers: {
-          'Content-Type': 'audio/x-m4a',
-        },
-      });
-
-      if (uploadResponse.status !== 200 && uploadResponse.status !== 201) {
-        throw new Error(`S3 업로드 실패: ${uploadResponse.status}`);
-      }
-
-      return true;
-    } catch (error) {
-      console.error('S3 업로드 실패:', error);
-      Alert.alert('오류', '녹음 파일 업로드에 실패했습니다.');
-      return false;
-    }
-  };
-
-  const requestTranscription = async (
-    recordId: number,
-    fileUrl: string,
-    startTime: string,
-    endTime: string
-  ) => {
-    try {
-      const accessToken = await SecureStore.getItemAsync('accessToken');
-
-      const queryParams = new URLSearchParams({
-        recordS3Path: fileUrl,
-        startTime,
-        endTime,
-      });
-
-      console.log('recordId: ', recordId);
-      const url = `${BASE_URL}/records/${recordId}/transcriptions?${queryParams.toString()}`;
-      console.log('😀 STT 요청 URL:', url);
-
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-
-      if (!response.ok) throw new Error('STT 요청 실패');
-
-      Alert.alert('요청 완료', '음성 텍스트 변환을 시작했습니다.');
-    } catch (error) {
-      console.error('STT 요청 실패:', error);
-      Alert.alert('오류', '음성 텍스트 변환 요청에 실패했습니다.');
-    }
-  };
-
-  const handleUploadAndTranscribe = async () => {
-    if (!recordedUri) {
-      Alert.alert('오류', '녹음된 파일이 없습니다.');
-      return;
-    }
-
-    setIsUploading(true);
-    const fileName = getFileNameFromUri(recordedUri);
-    console.log('fileName', fileName);
-    const presigned = await getPresignedUrl(fileName, recordId);
-
-    if (!presigned || !presigned.uploadUrl) {
-      Alert.alert('오류', '유효한 업로드 URL이 없습니다.');
-      setIsUploading(false);
-      return;
-    }
-
-    const success = await uploadToS3(recordedUri, presigned.uploadUrl);
-    if (success) {
-      setRecordId(presigned.recordId);
-
-      const fileUrl = presigned.uploadUrl.split('?')[0];
-      console.log('😇 실제 업로드된 버킷 경로', fileUrl);
-
-      // 'voice/...' 부분만 추출
-      const recordS3Path = fileUrl.split('.com/')[1];
-      console.log('voice 이후 경로: ', recordS3Path);
-
-      const formattedStartTime = toCustomISOString(recordStartTime ?? new Date()); // 날짜 형식 'YYYY-MM-DDTHH:MM:SS.000000'
-      const formattedEndTime = toCustomISOString(recordEndTime ?? new Date());
-      console.log('시작시간, 끝나는시간', formattedStartTime, formattedEndTime);
-      await requestTranscription(
-        presigned.recordId,
-        recordS3Path,
-        formattedStartTime,
-        formattedEndTime
+      if (sound) await sound.unloadAsync();
+      const { sound: newSound } = await Audio.Sound.createAsync(
+        { uri: recordedUri },
+        { shouldPlay: true }
       );
+      setSound(newSound);
+    } catch (error) {
+      console.error('Failed to play recording', error);
+      Alert.alert('오류', '녹음을 재생할 수 없습니다.');
     }
-
-    setIsUploading(false);
   };
 
   const { formattedDate, formattedTime } = formatDateTime(currentDateTime);
@@ -325,7 +172,7 @@ export default function Home() {
       <Text className="ml-[30px] self-start text-[33px] font-bold">음성 녹음</Text>
 
       <View className="mb-[25px] mt-[20px] w-[85%] flex-row justify-between">
-        <Text className="rounded-xl bg-[#ececec] px-[16px] py-[8px]  text-[15px] font-medium text-[#4A89F3]">
+        <Text className="rounded-xl bg-[#ececec] px-[16px] py-[8px] text-[15px] font-medium text-[#4A89F3]">
           {formattedDate}
         </Text>
         <Text className="rounded-xl bg-[#ececec] px-[16px] py-[8px] text-[15px] font-medium text-[#4A89F3]">
@@ -334,7 +181,7 @@ export default function Home() {
       </View>
 
       <View
-        className={`elevation-4 shadow-xs relative z-20 mb-[80px] h-[150px] w-[85%] items-center justify-center rounded-[20px] bg-transparent px-[30px]`}
+        className="elevation-4 shadow-xs relative z-20 mb-[80px] h-[150px] w-[85%] items-center justify-center rounded-[20px] bg-transparent px-[30px]"
         style={{ marginTop: '10%' }}>
         {recording && (
           <View className="absolute z-[-1] h-full w-full rounded-[10px] bg-transparent" />
@@ -352,7 +199,7 @@ export default function Home() {
           onStopRecord={onStopRecord}
         />
 
-        {recording && (
+        {recording ? (
           <View className="mt-[10px] items-center">
             <View className="mb-[10px] mr-3 flex-row items-center">
               <Animated.Image
@@ -391,8 +238,7 @@ export default function Home() {
               한번 더 누를 시 중지됩니다.
             </Text>
           </View>
-        )}
-        {!recording && (
+        ) : (
           <Text
             className="mt-[30px] text-[15px] font-bold tracking-[0.5px]"
             style={{
@@ -423,20 +269,13 @@ export default function Home() {
         </Text>
       </TouchableOpacity>
 
-      <TouchableOpacity
-        onPress={handleUploadAndTranscribe}
-        disabled={!recordedUri || isUploading}
-        style={{
-          marginTop: 10,
-          paddingVertical: 10,
-          paddingHorizontal: 20,
-          backgroundColor: !recordedUri || isUploading ? '#cccccc' : '#4caf50',
-          borderRadius: 10,
-        }}>
-        <Text style={{ color: 'white', fontWeight: 'bold' }}>
-          {isUploading ? '업로드 중...' : '녹음 업로드 및 텍스트화 요청'}
-        </Text>
-      </TouchableOpacity>
+      <UploadTranscribeButton
+        recordedUri={recordedUri}
+        recordStartTime={recordStartTime}
+        recordEndTime={recordEndTime}
+        getFileNameFromUri={getFileNameFromUri}
+        BASE_URL={BASE_URL}
+      />
     </View>
   );
 }
