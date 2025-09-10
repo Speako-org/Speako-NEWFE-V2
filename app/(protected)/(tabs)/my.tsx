@@ -8,12 +8,12 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import EmotionChart from '../../../components/mypage/Chart/EmotionChart';
 import Achievement from '../../../components/mypage/Achievement';
 import Challenge from '../../../components/mypage/Challenge';
 import TabBar from '../../../components/mypage/TabBar';
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   myPageApi,
   Achievement as AchievementType,
@@ -68,11 +68,41 @@ const Mypage = () => {
     })();
   }, []);
 
+  // 화면이 포커스를 받을 때마다 프로필 데이터 새로고침
+  useFocusEffect(
+    React.useCallback(() => {
+      if (userId && !booting) {
+        fetchProfile(userId);
+      }
+    }, [userId, booting])
+  );
+
   if (booting) {
     return (
       <View className="flex-1 items-center justify-center bg-white">
         <ActivityIndicator size="large" color="#8962C8" />
         <Text className="mt-2 text-gray-500">정보를 불러오는 중…</Text>
+      </View>
+    );
+  }
+
+  if (errorMsg) {
+    return (
+      <View className="flex-1 items-center justify-center bg-white px-6">
+        <Text className="mb-4 text-center text-lg font-semibold text-red-500">
+          오류가 발생했습니다
+        </Text>
+        <Text className="mb-6 text-center text-gray-600">{errorMsg}</Text>
+        <TouchableOpacity
+          onPress={() => {
+            setErrorMsg(null);
+            if (userId) {
+              fetchProfile(userId);
+            }
+          }}
+          className="rounded-lg bg-[#8953E0] px-6 py-3">
+          <Text className="font-semibold text-white">다시 시도</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -111,11 +141,11 @@ const Mypage = () => {
               {' '}
               {((monthlyStats?.[0]?.avgPositiveRatio ?? 0) * 100).toFixed(0)}%
             </Text>
-            <Text className="text-center text-sm text-gray-600">긍정 표현 사용률</Text>
+            <Text className="text-m text-center text-gray-600">긍정 표현 사용률</Text>
           </View>
           <View className="mx-1 flex-1 items-center rounded-lg bg-purple-50 p-5">
             <Text className="mb-1 text-3xl font-bold">{monthlyStats?.[0]?.maxStreak}</Text>
-            <Text className="text-center text-sm text-gray-600">연속 기록일 수</Text>
+            <Text className="text-m text-center text-gray-600">연속 기록일 수</Text>
           </View>
         </View>
       </View>
@@ -173,37 +203,37 @@ const Mypage = () => {
         <View className="mx-[20px] mb-[30px] mt-[15px] rounded-[10px] bg-white px-[15px] pt-5 ">
           {/* Profile Info */}
           <View className="mb-5 flex-row items-center">
-            <View className="mr-[15px] h-[60px] w-[60px] items-center justify-center rounded-full border-2 border-gray-200 bg-gray-100">
-              <Image
-                source={
-                  profileData?.profileImageUrl
-                    ? { uri: profileData.profileImageUrl }
-                    : require('../../../assets/default-profile.png')
-                }
-                className="h-[52px] w-[52px] rounded-full"
-                resizeMode="cover"
-              />
-            </View>
+            <Image
+              source={
+                profileData?.profileImageUrl
+                  ? { uri: profileData.profileImageUrl }
+                  : require('../../../assets/default-profile.png')
+              }
+              className="mr-[15px] mt-3 h-[60px] w-[60px] rounded-full"
+              resizeMode="cover"
+            />
             <View className="flex-1">
-              <View className="mb-2 flex-row items-center">
-                <Text className="mr-[7px] mt-3 text-[18px] font-bold text-black">
-                  {profileData?.nickname}
-                </Text>
-                <Text className="mt-3 rounded-full bg-[#eadeff] px-2 py-1 text-[9px] font-bold text-[#8953e0]">
-                  {profileData?.mainBadgeName}
-                </Text>
-              </View>
-              <View className="flex-row items-center justify-between">
-                <Text className="flex-1 text-[13px] font-medium text-gray-500">
-                  {profileData?.selfComment}
-                </Text>
-                <TouchableOpacity onPress={handleEditComment} className="ml-2">
+              <View className="mb-2 flex-row items-center justify-between">
+                <View className="flex-row items-center">
+                  <Text className="mr-[7px] mt-3 text-[22px] font-bold text-black">
+                    {profileData?.nickname}
+                  </Text>
+                  <Text className="mt-3 rounded-full bg-[#eadeff] px-2 py-1 text-[11px] font-bold text-[#8953e0]">
+                    {profileData?.mainBadgeName}
+                  </Text>
+                </View>
+                <TouchableOpacity onPress={handleEditComment} className="mt-3">
                   <Image
                     source={require('../../../assets/profile_edit.png')}
-                    className="h-6 w-6"
+                    className="h-7 w-7"
                     resizeMode="contain"
                   />
                 </TouchableOpacity>
+              </View>
+              <View className="flex-row items-center">
+                <Text className="flex-1 text-[15px] font-medium text-gray-500">
+                  {profileData?.selfComment}
+                </Text>
               </View>
             </View>
           </View>

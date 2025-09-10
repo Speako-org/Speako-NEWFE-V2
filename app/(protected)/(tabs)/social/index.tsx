@@ -1,6 +1,6 @@
 import { SafeAreaView, View, Text, ScrollView, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import * as SecureStore from 'expo-secure-store';
 import dayjs from 'dayjs';
 
@@ -57,7 +57,7 @@ export default function SocialScreen() {
     })();
   }, [userKey]);
 
-  const fetchArticles = async () => {
+  const fetchArticles = useCallback(async () => {
     setLoading(true);
     try {
       const accessToken = await SecureStore.getItemAsync('accessToken');
@@ -122,14 +122,14 @@ export default function SocialScreen() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [likedSet, userKey]);
 
   useEffect(() => {
     const run = async () => {
       await fetchArticles();
     };
     run();
-  }, [likedSet, userKey]);
+  }, [likedSet, userKey, fetchArticles]);
 
   const handleToggleLikeLocal = (id: number) => {
     setPosts((prev) =>
@@ -167,28 +167,29 @@ export default function SocialScreen() {
     );
   };
 
+  const showShareModal = (params as any)?.showShareModal;
+  const badgeIcon = (params as any)?.badgeIcon;
+  const badgeTitle = (params as any)?.badgeTitle;
+  const badgeDescription = (params as any)?.badgeDescription;
+
   useEffect(() => {
     if (
-      (params as any)?.showShareModal === 'true' &&
-      (params as any)?.badgeIcon &&
-      (params as any)?.badgeTitle &&
-      (params as any)?.badgeDescription &&
+      showShareModal === 'true' &&
+      badgeIcon &&
+      badgeTitle &&
+      badgeDescription &&
       !shareModalVisible
     ) {
       setShareModalVisible(true);
     }
-  }, [
-    (params as any)?.showShareModal,
-    (params as any)?.badgeIcon,
-    (params as any)?.badgeTitle,
-    (params as any)?.badgeDescription,
-    shareModalVisible,
-  ]);
+  }, [params, showShareModal, badgeIcon, badgeTitle, badgeDescription, shareModalVisible]);
 
   return (
-    <SafeAreaView className="relative flex-1 bg-white">
-      <View className="px-6 pb-6 pt-12">
-        <Text className="mb-6 text-3xl font-bold">소셜</Text>
+    <SafeAreaView className="relative flex-1 bg-[#f2f2f2]">
+      <View className="ml-2 px-6 pt-12">
+        <Text className="mb-4 text-4xl font-bold">소셜</Text>
+      </View>
+      <View className="px-4 pb-4">
         <TabHeader activeTab={activeTab} setActiveTab={setActiveTab} />
       </View>
 

@@ -12,7 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
 import { apiClient } from '../../api/client';
-import { myPageApi, Achievement as AchievementType } from '../../api/types/statistic';
+import { myPageApi, Achievement as AchievementType, Achievement } from '../../api/types/statistic';
 
 const ProfileEdit = () => {
   const router = useRouter();
@@ -75,22 +75,39 @@ const ProfileEdit = () => {
 
   const handleSave = async () => {
     try {
+      if (!profileData) {
+        Alert.alert('오류', '프로필 데이터를 불러올 수 없습니다.');
+        return;
+      }
+
+      let updatedProfileData: Achievement = { ...profileData };
+
       // username update API 호출
-      if (editedNickname !== profileData?.nickname) {
+      if (editedNickname !== profileData.nickname) {
         const usernameResponse = await apiClient.updateUsername(editedNickname);
         if (usernameResponse.isSuccess) {
           console.log('닉네임 업데이트 성공:', usernameResponse.result);
+
+          updatedProfileData = {
+            ...updatedProfileData,
+            nickname: editedNickname,
+          };
         }
       }
 
       // self-comment update API 호출
-      if (editedComment !== profileData?.selfComment) {
+      if (editedComment !== profileData.selfComment) {
         const commentResponse = await apiClient.patch<{ isSuccess: boolean; message?: string }>(
           '/api/users/self-comment',
           { selfComment: editedComment }
         );
         if (commentResponse.isSuccess) {
           console.log('소개글 업데이트 성공');
+
+          updatedProfileData = {
+            ...updatedProfileData,
+            selfComment: editedComment,
+          };
         }
       }
 
@@ -99,13 +116,25 @@ const ProfileEdit = () => {
         const imageResponse = await apiClient.updateProfileImage(selectedAvatar.toString());
         if (imageResponse.isSuccess) {
           console.log('프로필 이미지 업데이트 성공');
+
+          updatedProfileData = {
+            ...updatedProfileData,
+            profileImageUrl: imageResponse.result.newImageTypeUrl,
+          };
         }
       }
+
+      setProfileData(updatedProfileData);
 
       Alert.alert('성공', '프로필이 업데이트되었습니다.', [
         {
           text: '확인',
-          onPress: () => router.back(),
+          onPress: () => {
+            // 마이페이지로 돌아가기 전에 약간의 지연을 두어 상태 업데이트가 완료되도록 함
+            setTimeout(() => {
+              router.back();
+            }, 100);
+          },
         },
       ]);
     } catch (error) {
@@ -132,17 +161,15 @@ const ProfileEdit = () => {
         {/* 프로필 이미지 */}
         <View className="mb-6 items-center">
           <View className="relative">
-            <View className="h-20 w-20 items-center justify-center rounded-full border-2 border-gray-200 bg-gray-100">
-              <Image
-                source={
-                  profileData?.profileImageUrl
-                    ? { uri: profileData.profileImageUrl }
-                    : require('../../assets/default-profile.png')
-                }
-                className="h-16 w-16 rounded-full"
-                resizeMode="cover"
-              />
-            </View>
+            <Image
+              source={
+                profileData?.profileImageUrl
+                  ? { uri: profileData.profileImageUrl }
+                  : require('../../assets/default-profile.png')
+              }
+              className="h-24 w-24 rounded-full"
+              resizeMode="cover"
+            />
             <TouchableOpacity
               onPress={handleImagePicker}
               className="absolute bottom-0 right-0 h-7 w-7 items-center justify-center rounded-full bg-[#c1a0f6]"
@@ -181,21 +208,25 @@ const ProfileEdit = () => {
 
       {/* 아바타 선택 모달 */}
       <Modal visible={showImagePickerModal} transparent={true} animationType="fade">
-        <View
+        <TouchableOpacity
           style={{
             flex: 1,
             backgroundColor: 'rgba(0,0,0,0.5)',
             justifyContent: 'center',
             alignItems: 'center',
-          }}>
-          <View
+          }}
+          activeOpacity={1}
+          onPress={() => setShowImagePickerModal(false)}>
+          <TouchableOpacity
             style={{
               width: '90%',
               maxWidth: 400,
               backgroundColor: 'white',
               borderRadius: 16,
               padding: 24,
-            }}>
+            }}
+            activeOpacity={1}
+            onPress={(e) => e.stopPropagation()}>
             <Text
               style={{
                 marginBottom: 20,
@@ -260,8 +291,8 @@ const ProfileEdit = () => {
                 완료
               </Text>
             </TouchableOpacity>
-          </View>
-        </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
       </Modal>
     </SafeAreaView>
   );

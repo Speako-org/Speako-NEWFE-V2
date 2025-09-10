@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Alert, Text, View, TouchableOpacity, Animated } from 'react-native';
 import { Audio, InterruptionModeIOS, InterruptionModeAndroid } from 'expo-av';
+import { Ionicons } from '@expo/vector-icons';
 
 import RecordButton from '~/components/RecordButton/RecordButton';
 import UploadTranscribeButton from '~/components/UploadTranscribeButton';
@@ -25,8 +26,7 @@ export default function Home() {
   // 오디오 인스턴스
   const [sound, setSound] = useState<Audio.Sound | null>(null);
   const [recordingInstance, setRecordingInstance] = useState<Audio.Recording | null>(null);
-
-  const [recordId, setRecordId] = useState<number | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   const BASE_URL = 'https://speako.site/api';
 
@@ -58,15 +58,49 @@ export default function Home() {
     };
   }, [recording]);
 
+  // 재생 완료 시 상태 초기화
+  useEffect(() => {
+    if (sound) {
+      const onPlaybackStatusUpdate = (status: any) => {
+        if (status.didJustFinish) {
+          setIsPlaying(false);
+        }
+      };
+      sound.setOnPlaybackStatusUpdate(onPlaybackStatusUpdate);
+    }
+  }, [sound]);
+
+  // 컴포넌트 언마운트 시 정리
+  useEffect(() => {
+    return () => {
+      if (sound) {
+        sound.unloadAsync();
+      }
+      if (recordingInstance) {
+        recordingInstance.stopAndUnloadAsync();
+      }
+    };
+  }, [sound, recordingInstance]);
+
   // 녹음 시작
   const onStartRecord = async () => {
     try {
+      // 기존 녹음 인스턴스 정리
       if (recordingInstance) {
         try {
           await recordingInstance.stopAndUnloadAsync();
         } catch {}
         setRecordingInstance(null);
         setRecording(false);
+      }
+
+      // 기존 재생 인스턴스 정리
+      if (sound) {
+        try {
+          await sound.unloadAsync();
+        } catch {}
+        setSound(null);
+        setIsPlaying(false);
       }
 
       await Audio.setAudioModeAsync({
@@ -87,7 +121,6 @@ export default function Home() {
       });
       await new Promise((r) => setTimeout(r, 100));
 
-      setRecordedUri(null);
       const { recording } = await Audio.Recording.createAsync(
         Audio.RecordingOptionsPresets.HIGH_QUALITY
       );
@@ -144,18 +177,31 @@ export default function Home() {
       pulseAnim.stopAnimation();
       pulseAnim.setValue(1);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recording]);
 
-  // 녹음 재생
+  // 녹음 재생/일시정지
   const onPlayRecordedAudio = async () => {
     if (!recordedUri) return;
     try {
-      if (sound) await sound.unloadAsync();
-      const { sound: newSound } = await Audio.Sound.createAsync(
-        { uri: recordedUri },
-        { shouldPlay: true }
-      );
-      setSound(newSound);
+      if (isPlaying && sound) {
+        // 재생 중이면 일시정지
+        await sound.pauseAsync();
+        setIsPlaying(false);
+      } else {
+        // 일시정지 중이거나 처음 재생이면 재생
+        if (sound) {
+          await sound.playAsync();
+        } else {
+          // 새로운 녹음이면 새로운 sound 인스턴스 생성
+          const { sound: newSound } = await Audio.Sound.createAsync(
+            { uri: recordedUri },
+            { shouldPlay: true }
+          );
+          setSound(newSound);
+        }
+        setIsPlaying(true);
+      }
     } catch (error) {
       console.error('Failed to play recording', error);
       Alert.alert('오류', '녹음을 재생할 수 없습니다.');
@@ -169,7 +215,7 @@ export default function Home() {
       {recording && <View className="absolute inset-0 z-10 bg-black/70" pointerEvents="none" />}
       <View className="absolute bottom-0 h-[80px] w-full" />
 
-      <Text className="ml-[30px] self-start text-[33px] font-bold">음성 녹음</Text>
+      <Text className="-mt-20 ml-[30px] self-start text-[33px] font-bold">음성 녹음</Text>
 
       <View className="mb-[25px] mt-[20px] w-[85%] flex-row justify-between">
         <Text className="rounded-xl bg-[#ececec] px-[16px] py-[8px] text-[15px] font-medium text-[#4A89F3]">
@@ -193,39 +239,55 @@ export default function Home() {
           </Text>
         )}
 
-        <RecordButton
-          recording={!!recordingInstance}
-          onStartRecord={onStartRecord}
-          onStopRecord={onStopRecord}
-        />
+        {recording ? (
+          <TouchableOpacity
+            onPress={() => {
+              Alert.alert('녹음 종료', '녹음을 종료하시겠어요?', [
+                {
+                  text: '취소',
+                  style: 'cancel',
+                },
+                {
+                  text: '종료',
+                  onPress: onStopRecord,
+                },
+              ]);
+            }}
+            className="items-center">
+            <Animated.Image
+              source={require('../../../assets/recording_on_button.png')}
+              style={{
+                marginRight: 12,
+                width: 80,
+                height: 80,
+                resizeMode: 'contain',
+                transform: [{ scale: pulseAnim }],
+              }}
+            />
+            <Text
+              className="mt-8 text-[18px] font-semibold text-[#a7a7a7]"
+              style={{
+                shadowColor: '#000',
+                shadowOpacity: 0.5,
+                shadowOffset: { width: 0, height: 1 },
+                shadowRadius: 2,
+                elevation: 2,
+              }}>
+              녹음중
+            </Text>
+          </TouchableOpacity>
+        ) : (
+          <RecordButton
+            recording={!!recordingInstance}
+            onStartRecord={onStartRecord}
+            onStopRecord={onStopRecord}
+          />
+        )}
 
         {recording ? (
           <View className="mt-[10px] items-center">
-            <View className="mb-[10px] mr-3 flex-row items-center">
-              <Animated.Image
-                source={require('../../../assets/recording_on_button.png')}
-                style={{
-                  width: 30,
-                  height: 30,
-                  resizeMode: 'contain',
-                  marginRight: 8,
-                  transform: [{ scale: pulseAnim }],
-                }}
-              />
-              <Text
-                className="ml-1 text-[18px] font-semibold text-[#a7a7a7]"
-                style={{
-                  shadowColor: '#000',
-                  shadowOpacity: 0.5,
-                  shadowOffset: { width: 0, height: 1 },
-                  shadowRadius: 2,
-                  elevation: 2,
-                }}>
-                녹음중
-              </Text>
-            </View>
             <Text
-              className="mt-2 text-[15px] font-medium tracking-[0.5px]"
+              className="mt-2 text-[17px] font-medium tracking-[0.5px]"
               style={{
                 shadowColor: '#000',
                 shadowOpacity: 0.1,
@@ -235,47 +297,52 @@ export default function Home() {
                 color: '#a7a7a7',
                 opacity: 0.8,
               }}>
-              한번 더 누를 시 중지됩니다.
+              한번 더 누를 시 녹음이 종료돼요!
             </Text>
           </View>
-        ) : (
-          <Text
-            className="mt-[30px] text-[15px] font-bold tracking-[0.5px]"
-            style={{
-              shadowColor: '#000',
-              shadowOpacity: 0.1,
-              shadowOffset: { width: 0, height: 1 },
-              shadowRadius: 2,
-              elevation: 2,
-              color: '#858585',
-              opacity: 0.8,
-            }}>
-            버튼을 누르시면 음성이 기록됩니다.
-          </Text>
-        )}
+        ) : null}
       </View>
 
-      <TouchableOpacity
-        onPress={onPlayRecordedAudio}
-        disabled={!recordedUri}
-        style={{
-          paddingVertical: 10,
-          paddingHorizontal: 20,
-          backgroundColor: recordedUri ? '#a7cdfc' : '#cccccc',
-          borderRadius: 10,
-        }}>
-        <Text style={{ color: 'white', fontWeight: 'bold' }}>
-          {recordedUri ? '녹음 듣기 테스트' : '녹음 없음'}
-        </Text>
-      </TouchableOpacity>
+      <View className="absolute bottom-[140px] left-0 right-0 px-6">
+        {recordedUri && (
+          <Text className="mb-4 text-center text-sm text-gray-500">
+            * 업로드를 하면 기록 탭에서 분석이 시작돼요
+          </Text>
+        )}
+        <View className="flex-row justify-center">
+          <View className="max-w-[200px] flex-1">
+            <TouchableOpacity
+              onPress={onPlayRecordedAudio}
+              disabled={!recordedUri}
+              className={`mr-4 items-center justify-center rounded-xl px-6 py-4 shadow-lg ${
+                recordedUri ? 'bg-[#B88FEA]' : 'bg-gray-300'
+              }`}
+              style={{
+                elevation: 4,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.25,
+                shadowRadius: 4,
+              }}>
+              {recordedUri ? (
+                <Ionicons name={isPlaying ? 'pause' : 'play'} size={22} color="#ffffff" />
+              ) : (
+                <Text className="text-center text-base font-semibold text-white">녹음 없음</Text>
+              )}
+            </TouchableOpacity>
+          </View>
 
-      <UploadTranscribeButton
-        recordedUri={recordedUri}
-        recordStartTime={recordStartTime}
-        recordEndTime={recordEndTime}
-        getFileNameFromUri={getFileNameFromUri}
-        BASE_URL={BASE_URL}
-      />
+          <View className="max-w-[200px] flex-1">
+            <UploadTranscribeButton
+              recordedUri={recordedUri}
+              recordStartTime={recordStartTime}
+              recordEndTime={recordEndTime}
+              getFileNameFromUri={getFileNameFromUri}
+              BASE_URL={BASE_URL}
+            />
+          </View>
+        </View>
+      </View>
     </View>
   );
 }

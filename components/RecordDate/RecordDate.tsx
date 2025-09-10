@@ -1,8 +1,19 @@
-import { FlatList, Text, TouchableOpacity, View, Animated, ActivityIndicator } from 'react-native';
-import { AntDesign } from '@expo/vector-icons';
-import { useRouter, type Href } from 'expo-router';
+import {
+  FlatList,
+  Text,
+  TouchableOpacity,
+  View,
+  Animated,
+  ActivityIndicator,
+  Alert,
+} from 'react-native';
+import { AntDesign, Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { Swipeable } from 'react-native-gesture-handler';
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Audio } from 'expo-av';
+import * as SecureStore from 'expo-secure-store';
 
 export type RecordType = {
   id: string;
@@ -30,6 +41,10 @@ export default function RecordDate({
   const router = useRouter();
   const openedRef = useRef<Swipeable | null>(null);
 
+  // 오디오 재생 관련 상태 - 각 녹음별로 독립적인 상태 관리
+  const [sounds, setSounds] = useState<Map<string, Audio.Sound>>(new Map());
+  const [playingStates, setPlayingStates] = useState<Map<string, boolean>>(new Map());
+
   const changeDate = (days: number) => {
     const newDate = new Date(selectedDate);
     newDate.setDate(newDate.getDate() + days);
@@ -44,13 +59,64 @@ export default function RecordDate({
     const isCompleted = COMPLETED_STATUSES.includes(record.status);
     if (!isCompleted) return;
 
-    const href = {
-      pathname: '/(protected)/record-detail',
-      params: { id: record.id },
-    } as const;
-
-    router.push(href as Href);
+    router.push(`/(protected)/record-detail?id=${record.id}` as any);
   };
+
+  // 오디오 재생/일시정지 함수
+  const onPlayRecordedAudio = async (recordId: string) => {
+    try {
+      const currentSound = sounds.get(recordId);
+      const isCurrentlyPlaying = playingStates.get(recordId) || false;
+
+      if (isCurrentlyPlaying && currentSound) {
+        // 현재 재생 중인 녹음이면 일시정지
+        await currentSound.pauseAsync();
+        setPlayingStates((prev) => new Map(prev).set(recordId, false));
+      } else {
+        if (currentSound) {
+          // 이미 로드된 녹음이면 재생
+          await currentSound.playAsync();
+          setPlayingStates((prev) => new Map(prev).set(recordId, true));
+        } else {
+          // 새로운 녹음 로드 및 재생
+          const accessToken = await SecureStore.getItemAsync('accessToken');
+          const audioUrl = `https://speako.site/api/transcriptions/${recordId}/audio`;
+
+          const { sound: newSound } = await Audio.Sound.createAsync(
+            {
+              uri: audioUrl,
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+              },
+            },
+            { shouldPlay: true }
+          );
+
+          // 재생 완료 시 상태 초기화
+          newSound.setOnPlaybackStatusUpdate((status: any) => {
+            if (status.didJustFinish) {
+              setPlayingStates((prev) => new Map(prev).set(recordId, false));
+            }
+          });
+
+          setSounds((prev) => new Map(prev).set(recordId, newSound));
+          setPlayingStates((prev) => new Map(prev).set(recordId, true));
+        }
+      }
+    } catch (error) {
+      console.error('Failed to play recording', error);
+      Alert.alert('오류', '녹음을 재생할 수 없습니다.');
+    }
+  };
+
+  // 컴포넌트 언마운트 시 모든 오디오 정리
+  useEffect(() => {
+    return () => {
+      sounds.forEach((sound) => {
+        sound.unloadAsync();
+      });
+    };
+  }, [sounds]);
 
   const renderRightActions = (
     progress: Animated.AnimatedInterpolation<number>,
@@ -58,7 +124,7 @@ export default function RecordDate({
     id: string
   ) => {
     const translateX = dragX.interpolate({
-      inputRange: [-120, 0],
+      inputRange: [-80, 0],
       outputRange: [0, 40],
       extrapolate: 'clamp',
     });
@@ -66,26 +132,36 @@ export default function RecordDate({
     return (
       <Animated.View
         style={{
-          width: 100,
-          backgroundColor: '#ef4444',
+          width: 80,
           justifyContent: 'center',
           alignItems: 'center',
           transform: [{ translateX }],
-          marginVertical: 10,
           marginRight: 10,
           borderTopRightRadius: 12,
           borderBottomRightRadius: 12,
+          overflow: 'hidden',
         }}>
-        <TouchableOpacity
-          onPress={() => {
-            openedRef.current?.close();
-            onDeleteRecord(id);
-          }}
-          className="items-center justify-center"
-          accessibilityLabel="기록 삭제">
-          <AntDesign name="delete" size={22} color="#fff" />
-          <Text className="mt-[6px] text-[12px] font-semibold text-white">삭제</Text>
-        </TouchableOpacity>
+        <LinearGradient
+          colors={['#f8f5ff', '#e8d5ff', '#d8c5ff', '#c8b5ff']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 3, y: 0 }}
+          locations={[0, 0.3, 0.7, 1]}
+          style={{
+            width: '100%',
+            height: '100%',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}>
+          <TouchableOpacity
+            onPress={() => {
+              openedRef.current?.close();
+              onDeleteRecord(id);
+            }}
+            className="items-center justify-center"
+            accessibilityLabel="기록 삭제">
+            <AntDesign name="delete" size={20} color="#ef4444" />
+          </TouchableOpacity>
+        </LinearGradient>
       </Animated.View>
     );
   };
@@ -126,9 +202,9 @@ export default function RecordDate({
           onPress={() => handleRecordPress(item)}
           activeOpacity={isCompleted ? 0.8 : 1}
           disabled={!isCompleted}>
-          <View className="my-[8px] mr-[15px] flex-row items-center justify-between bg-white py-[15px]">
-            <View className="flex-row items-center">
-              <Text className="ml-5 text-[16px] font-bold">{item.title}</Text>
+          <View className="my-[8px] mr-[15px] flex-row items-center justify-between py-[15px]">
+            <View className="flex-1 flex-row items-center">
+              <Text className="ml-5 flex-1 text-[16px] font-bold">{item.title}</Text>
               {!isCompleted && (
                 <View className="ml-1 flex-row items-center rounded-full bg-[#eee] px-1 py-[2px]">
                   <ActivityIndicator size="small" color="#8962c8" />
@@ -137,7 +213,23 @@ export default function RecordDate({
               )}
             </View>
 
-            <Text className="mr-2 text-[14px] text-[#777]">{item.duration}</Text>
+            <View className="flex-row items-center">
+              {isCompleted && (
+                <TouchableOpacity
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    onPlayRecordedAudio(item.id);
+                  }}
+                  className="mr-3 h-8 w-8 items-center justify-center rounded-full bg-[#8962c8]">
+                  <Ionicons
+                    name={playingStates.get(item.id) ? 'pause' : 'play'}
+                    size={16}
+                    color="#ffffff"
+                  />
+                </TouchableOpacity>
+              )}
+              <Text className="mr-2 text-[14px] text-[#777]">{item.duration}</Text>
+            </View>
           </View>
 
           {!isCompleted && <View className="absolute inset-0 bg-white/50" pointerEvents="none" />}
@@ -149,17 +241,22 @@ export default function RecordDate({
   };
 
   return (
-    <View className="mx-[28px] h-[580px] rounded-[15px] bg-white px-[10px] py-[20px]">
+    <View className="mx-[20px] h-[580px] rounded-[15px] bg-white px-[5px] py-[20px]">
       {/* 날짜 이동 컨트롤 */}
-      <View className="mx-[15px] my-[20px] flex-row items-center justify-between">
-        <TouchableOpacity onPress={() => changeDate(-1)}>
-          <AntDesign name="left" size={20} />
+      <View className="mx-[15px] my-[20px] flex-row items-center justify-center">
+        <TouchableOpacity
+          onPress={() => changeDate(-1)}
+          className="absolute left-0 h-10 w-10 items-center justify-center">
+          <AntDesign name="left" size={20} color="#666" />
         </TouchableOpacity>
 
         <Text className="text-[20px] font-semibold text-[#8962c8]">{formattedSelectedDate}</Text>
 
-        <TouchableOpacity onPress={() => changeDate(1)} disabled={isToday}>
-          <AntDesign name="right" size={20} color={isToday ? '#bbb' : 'black'} />
+        <TouchableOpacity
+          onPress={() => changeDate(1)}
+          disabled={isToday}
+          className="absolute right-0 h-10 w-10 items-center justify-center">
+          <AntDesign name="right" size={20} color={isToday ? '#bbb' : '#666'} />
         </TouchableOpacity>
       </View>
 

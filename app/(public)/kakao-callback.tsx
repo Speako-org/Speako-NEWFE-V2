@@ -12,8 +12,8 @@ const KakaoCallback = () => {
   useEffect(() => {
     const handleKakaoCallback = async () => {
       try {
-        // URL 파라미터에서 access_token 확인
         const accessToken = searchParams.access_token as string;
+        const refreshToken = searchParams.refresh_token as string;
         const error = searchParams.error as string;
 
         if (error) {
@@ -22,15 +22,15 @@ const KakaoCallback = () => {
         }
 
         if (accessToken) {
-          // 토큰 저장
           await storeToken(accessToken);
+          if (refreshToken) {
+            await SecureStore.setItemAsync('refreshToken', refreshToken);
+          }
           router.replace('/(protected)/(tabs)/home' as any);
         } else {
-          // 토큰이 없는 경우
           setError('인증 정보를 찾을 수 없습니다.');
         }
-      } catch (error) {
-        console.error('Kakao callback error:', error);
+      } catch {
         setError('로그인 처리 중 오류가 발생했습니다.');
       }
     };
@@ -40,23 +40,9 @@ const KakaoCallback = () => {
 
   const storeToken = async (token: string) => {
     try {
-      // Expo SecureStore에 저장 (암호화된 저장소)
       await SecureStore.setItemAsync('accessToken', token);
-
-      // 웹 환경에서도 지원
-      if (typeof window !== 'undefined') {
-        // localStorage와 sessionStorage에 저장
-        localStorage.setItem('accessToken', token);
-        sessionStorage.setItem('accessToken', token);
-
-        // 쿠키에도 저장
-        document.cookie = `accessToken=${token}; path=/; SameSite=None; Secure`;
-      }
-
-      console.log('Kakao token stored successfully');
-    } catch (error) {
-      console.error('Error storing token:', error);
-      throw error;
+    } catch {
+      throw new Error('토큰 저장 실패');
     }
   };
 
