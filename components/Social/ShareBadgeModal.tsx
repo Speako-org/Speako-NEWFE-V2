@@ -131,8 +131,8 @@ export default function ShareBadgeModal({ visible, onClose, onSubmit }: ShareBad
           className="flex items-center rounded-3xl bg-white p-6 shadow-lg"
           style={{ minWidth: 320 }}>
           {/* 제목 */}
-          <View className="my-1 flex-row items-center justify-center text-gray-800">
-            <Text className="mr-2 text-lg font-bold">나의 뱃지 공유하기</Text>
+          <View className="my-1 mt-3 flex-row items-center justify-center text-gray-800">
+            <Text className="mr-2 text-xl font-bold">나의 뱃지 공유하기</Text>
             <Octicons name="pencil" size={18} />
           </View>
 
@@ -143,9 +143,9 @@ export default function ShareBadgeModal({ visible, onClose, onSubmit }: ShareBad
           </View>
 
           {/* 입력 + 뱃지 선택 + 미리보기 */}
-          <View className="mb-6 mt-4 flex h-[250px] w-[280px] justify-between rounded-lg border border-gray-100 bg-gray-100 px-2 py-3">
+          <View className="mb-6 mt-4 flex h-[250px] w-[300px] justify-between rounded-lg border border-gray-100 bg-gray-100 px-2 py-3">
             <TextInput
-              className="text-m mb-1 h-[80px] rounded-lg bg-gray-100 px-3 py-1 text-gray-800"
+              className="text-m mb-1 h-[80px] rounded-lg bg-gray-100 px-3 py-1 text-gray-900"
               placeholder={`이 뱃지를 얻기 위해 무슨 노력을 하셨나요? (최대 100자)`}
               maxLength={100}
               multiline
@@ -166,19 +166,19 @@ export default function ShareBadgeModal({ visible, onClose, onSubmit }: ShareBad
                 return (
                   <TouchableOpacity
                     disabled={isDisabled}
-                    className={`relative mx-1 h-9 w-9 items-center justify-center rounded-lg border
+                    className={`relative mx-2 h-14 w-14 items-center justify-center rounded-xl border-2
                       ${isSelected ? 'border-purple-500 bg-purple-50' : 'border-gray-200 bg-white'}
                       ${isDisabled ? 'opacity-40' : ''}
                     `}
                     onPress={() => {
                       if (!isDisabled) setSelectedBadge(item);
                     }}>
-                    <Text className="text-xl">{item.icon}</Text>
+                    <Text className="text-3xl">{item.icon}</Text>
 
                     {/* posted == true 이면 잠금 아이콘 */}
                     {isDisabled && (
                       <View className="absolute inset-0 flex items-center justify-center">
-                        <Octicons name="lock" size={20} color="black" />
+                        <Octicons name="lock" size={24} color="black" />
                       </View>
                     )}
                   </TouchableOpacity>
@@ -192,9 +192,9 @@ export default function ShareBadgeModal({ visible, onClose, onSubmit }: ShareBad
                 <BadgeCard badge={selectedBadge} />
               </View>
             ) : (
-              <View className="mt-1.5 flex flex-col items-center justify-center rounded-lg bg-white p-4">
-                <Octicons name="report" size={20} color="gray" />
-                <Text className="mt-2 text-center text-sm text-gray-500">
+              <View className="mt-1.5 flex flex-col items-center justify-center rounded-lg bg-white p-5">
+                <Octicons name="report" size={15} color="gray" />
+                <Text className="text-m mt-4 text-center text-gray-500">
                   모든 뱃지에 대한 게시글이 작성되었습니다.
                 </Text>
               </View>

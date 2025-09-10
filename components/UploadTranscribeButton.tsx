@@ -153,15 +153,18 @@ export default function UploadTranscribeButton({
     <TouchableOpacity
       onPress={onPress}
       disabled={!recordedUri || isUploading}
+      className={`items-center justify-center rounded-xl px-6 py-4 shadow-lg ${
+        !recordedUri || isUploading ? 'bg-gray-300' : 'bg-[#7BB0F7]'
+      }`}
       style={{
-        marginTop: 10,
-        paddingVertical: 10,
-        paddingHorizontal: 20,
-        backgroundColor: !recordedUri || isUploading ? '#cccccc' : '#4caf50',
-        borderRadius: 10,
+        elevation: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
       }}>
-      <Text style={{ color: 'white', fontWeight: 'bold' }}>
-        {isUploading ? '업로드 중...' : '녹음 업로드 및 텍스트화 요청'}
+      <Text className="text-center text-base font-semibold text-white">
+        {isUploading ? '업로드 중...' : '업로드'}
       </Text>
     </TouchableOpacity>
   );

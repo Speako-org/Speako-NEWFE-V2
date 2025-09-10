@@ -11,6 +11,8 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
+import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import { AntDesign, Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -131,26 +133,20 @@ const LoginScreen = () => {
     try {
       setIsLoading(true);
 
-      // 현재 도메인과 프로토콜을 정확히 가져오기
-      const protocol = window.location.protocol;
-      const host = window.location.host;
-      const baseUrl = `${protocol}//${host}`;
-
-      // 카카오 로그인 페이지로 리다이렉트 (콜백 URL 포함)
-      const callbackUrl = encodeURIComponent(`${baseUrl}/(public)/kakao-callback`);
+      const hostUri = Constants.expoConfig?.hostUri || '192.168.1.100:8081';
+      const callbackUrl = `exp://${hostUri}/kakao-callback`;
       const loginUrl = `https://speako.site/oauth2/authorization/kakao?redirect_uri=${callbackUrl}`;
 
-      console.log('Kakao login URL:', loginUrl);
-      console.log('Callback URL:', callbackUrl);
-      console.log('Current location:', window.location.href);
-      console.log('Base URL:', baseUrl);
+      const result = await WebBrowser.openBrowserAsync(loginUrl, {
+        showTitle: false,
+        enableBarCollapsing: false,
+        showInRecents: true,
+      });
 
-      // 페이지 이동 전에 현재 상태 로깅
-      console.log('Redirecting to Kakao login...');
-
-      window.location.href = loginUrl;
+      if (result.type === 'cancel') {
+        Alert.alert('알림', '카카오 로그인이 취소되었습니다.');
+      }
     } catch {
-      console.log('Kakao login error');
       Alert.alert('오류', '로그인 중 문제가 발생했습니다.');
     } finally {
       setIsLoading(false);
@@ -177,13 +173,13 @@ const LoginScreen = () => {
               </View>
               <View className="mb-20">
                 <View className="flex-row items-center justify-between">
-                  <Text className="mb-3.5 mt-1 text-sm font-medium text-gray-800">아이디</Text>
+                  <Text className="text-m mb-3.5 mt-1 font-medium text-gray-800">아이디</Text>
                   {errors.email && <Text className="text-xs text-red-500">{errors.email}</Text>}
                 </View>
                 <View className="mb-8 min-h-[50px] flex-row items-center border-b border-gray-200 pb-2">
                   <AntDesign name="user" size={20} color="#CECECE" className="mr-2.5" />
                   <TextInput
-                    className="text-m flex-1 text-[#333]"
+                    className="flex-1 text-lg text-[#333]"
                     placeholder="아이디를 입력하세요"
                     placeholderTextColor="#CECECE"
                     value={email}
@@ -192,7 +188,7 @@ const LoginScreen = () => {
                   />
                 </View>
                 <View className="flex-row items-center justify-between">
-                  <Text className="mb-3.5 text-sm font-medium text-gray-800">비밀번호</Text>
+                  <Text className="text-m mb-3.5 font-medium text-gray-800">비밀번호</Text>
                   {errors.password && (
                     <Text className="text-xs text-red-500">{errors.password}</Text>
                   )}
@@ -200,7 +196,7 @@ const LoginScreen = () => {
                 <View className="mb-6 min-h-[50px] flex-row items-center border-b border-gray-200 pb-2">
                   <AntDesign name="lock" size={20} color="#CECECE" className="mr-2.5" />
                   <TextInput
-                    className="text-m flex-1 text-[#333]"
+                    className="flex-1 text-lg text-[#333]"
                     placeholder="비밀번호를 입력하세요"
                     placeholderTextColor="#CECECE"
                     value={password}

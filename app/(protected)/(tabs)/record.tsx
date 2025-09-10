@@ -78,7 +78,6 @@ export default function Record() {
 
   const onDeleteRecord = async (id: string) => {
     try {
-      const token = await SecureStore.getItemAsync('accessToken');
     } catch (e) {
       console.error('삭제 실패:', e);
     } finally {
@@ -91,9 +90,8 @@ export default function Record() {
   return (
     <View className="flex-1 bg-[#f2f2f2] pt-[90px]">
       <View className="absolute bottom-0 h-[111px] w-full" />
-
-      <View className="mb-5 px-[35px]">
-        <Text className="self-start text-[33px] font-bold">음성 기록</Text>
+      <View className="mb-5 ml-4 px-4">
+        <Text className="self-start text-[30px] font-bold">음성 기록</Text>
       </View>
 
       <View className="flex-1">

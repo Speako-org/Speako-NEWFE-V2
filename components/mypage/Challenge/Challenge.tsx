@@ -166,8 +166,8 @@ const Challenge = () => {
             <View
               key={index}
               className="mb-4 flex-row items-center rounded-lg border border-gray-200 bg-white p-4">
-              <View className="flex-1">
-                <Text className="mb-1 text-lg font-bold text-gray-800">{challenge.title}</Text>
+              <View className="flex-1 p-2">
+                <Text className="mb-1 text-xl font-bold text-gray-800">{challenge.title}</Text>
                 <Text className="text-m mb-3 text-gray-600">{challenge.description}</Text>
                 {renderProgressBar(challenge.progress, challenge.total)}
               </View>

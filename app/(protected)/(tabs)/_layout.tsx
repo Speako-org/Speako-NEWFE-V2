@@ -13,21 +13,22 @@ export default function TabLayout() {
 
         // @ts-ignore
         tabBarStyle: {
-          borderTopLeftRadius: 20,
-          borderTopRightRadius: 20,
-          height: 110,
+          borderTopLeftRadius: 30,
+          borderTopRightRadius: 30,
+          height: 105,
           backgroundColor: '#fff',
           position: 'absolute',
           bottom: 0,
           overflow: 'hidden',
           margin: 0,
-          padding: 3,
+          padding: 5,
+          borderTopWidth: 0,
+          elevation: 0,
+          shadowOpacity: 0,
         },
-        tabBarLabelStyle: {
-          marginTop: 4,
-        },
+
         tabBarIconStyle: {
-          marginTop: 15,
+          marginTop: 17,
         },
         tabBarItemStyle: {
           flex: 1,
@@ -39,40 +40,40 @@ export default function TabLayout() {
       <Tabs.Screen
         name="home"
         options={{
-          title: '홈',
+          title: '',
           // @ts-ignore
           tabBarIcon: ({ color, focused }) => (
-            <Feather name="home" size={24} color={focused ? 'black' : '#C8C2C2'} />
+            <Feather name="home" size={32} color={focused ? 'black' : '#C8C2C2'} />
           ),
         }}
       />
       <Tabs.Screen
         name="record"
         options={{
-          title: '기록',
+          title: '',
           // @ts-ignore
           tabBarIcon: ({ color, focused }) => (
-            <Octicons name="three-bars" size={24} color={focused ? 'black' : '#C8C2C2'} />
+            <Octicons name="three-bars" size={32} color={focused ? 'black' : '#C8C2C2'} />
           ),
         }}
       />
       <Tabs.Screen
         name="social"
         options={{
-          title: '소셜',
+          title: '',
           // @ts-ignore
           tabBarIcon: ({ color, focused }) => (
-            <MaterialIcons name="people" size={24} color={focused ? 'black' : '#C8C2C2'} />
+            <MaterialIcons name="people" size={32} color={focused ? 'black' : '#C8C2C2'} />
           ),
         }}
       />
       <Tabs.Screen
         name="my"
         options={{
-          title: '마이페이지',
+          title: '',
           // @ts-ignore
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name="person" size={24} color={focused ? 'black' : '#C8C2C2'} />
+            <Ionicons name="person" size={32} color={focused ? 'black' : '#C8C2C2'} />
           ),
         }}
       />
