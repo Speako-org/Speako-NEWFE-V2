@@ -12,7 +12,8 @@ type AnalysisResult = {
   thumbnailText: string;
   negativeRatio: number;
   positiveRatio: number;
-  negativeWordsTop3: string[] | null;
+  negativeSentencesTop3?: string[] | null;
+  feedbackSentences?: string[] | null;
   averageNegativeRatioOf7DaysAgo: number;
   averageNegativeRatioOfToday: number;
   dailyRatioOfRecent7Days: {
@@ -78,6 +79,10 @@ export default function RecordDetail() {
     );
   }
 
+  const negativeItems = analysis.negativeSentencesTop3 ?? (analysis as any).negativeWordsTop3 ?? [];
+
+  const feedbackItems = analysis.feedbackSentences ?? [];
+
   return (
     <View className="flex-1 bg-white px-[25px] pt-[80px]">
       {/* 하단 탭바 배경 */}
@@ -139,21 +144,39 @@ export default function RecordDetail() {
           {/* 구분선 */}
           <View className="my-[15px] h-[1px] bg-[#ddd]" />
 
+          {/* 발견된 부정적 표현 */}
           <Text className="mx-[2px] text-[14px] font-semibold">발견된 부정적 표현</Text>
-          {!analysis.negativeWordsTop3 || analysis.negativeWordsTop3.length === 0 ? (
+          {!negativeItems || negativeItems.length === 0 ? (
             <Text className="mx-[2px] mt-[5px] text-[12px] text-[#888]">
               발견된 부정적 표현이 없습니다.
             </Text>
           ) : (
-            <View className="mt-[5px] flex-row flex-wrap">
-              {analysis.negativeWordsTop3.map((tag, idx) => (
-                <Text
-                  key={idx}
-                  className="mr-[5.5px] mt-[3px] rounded-full bg-[#ffe9e9] px-[10px] py-[5px] text-[12px]">
-                  {tag}
-                </Text>
+            <View className="mt-[8px] space-y-[8px]">
+              {negativeItems.map((sentence: string, idx: number) => (
+                <View
+                  key={`${idx}-${sentence.slice(0, 12)}`}
+                  className="rounded-[8px] bg-[#ffe9e9] p-[10px]">
+                  <Text className="text-[13px] leading-[18px]">{sentence}</Text>
+                </View>
               ))}
             </View>
+          )}
+
+          {/* 개선안 */}
+          {feedbackItems && feedbackItems.length > 0 && (
+            <>
+              <View className="my-[15px] h-[1px] bg-[#eee]" />
+              <Text className="mx-[2px] text-[14px] font-semibold">개선안</Text>
+              <View className="mt-[8px] space-y-[8px]">
+                {feedbackItems.map((tip: string, idx: number) => (
+                  <View
+                    key={`${idx}-${tip.slice(0, 12)}`}
+                    className="mb-2 rounded-[8px] bg-[#f6f4ff] p-[10px]">
+                    <Text className="text-[13px] leading-[18px]">{tip}</Text>
+                  </View>
+                ))}
+              </View>
+            </>
           )}
         </View>
 
@@ -163,30 +186,47 @@ export default function RecordDetail() {
           <Text className="pl-[4px] text-[17px] font-semibold">개선 추이</Text>
         </View>
 
-        <View className="mb-[20px] mt-[5px] rounded-[10px] border border-[#e2e2e2] px-[10px] py-[15px]">
-          {[
-            {
-              label: '1주 전',
-              percent: Math.round(analysis.dailyRatioOfRecent7Days[0]?.avgNegativeRatio || 0),
-              text: `${Math.round(analysis.dailyRatioOfRecent7Days[0]?.avgNegativeRatio || 0)}% 부정`,
-            },
-            {
-              label: '현재',
-              percent: Math.round(analysis.dailyRatioOfRecent7Days[6]?.avgNegativeRatio || 0),
-              text: `${Math.round(analysis.dailyRatioOfRecent7Days[6]?.avgNegativeRatio || 0)}% 부정`,
-            },
-          ].map((item, idx) => (
-            <View key={idx} className="flex-row items-center justify-between py-[5px]">
-              <Text className="w-[60px] pl-[8px] text-[12px]">{item.label}</Text>
-              <View className="relative h-[17px] w-[200px] overflow-hidden rounded-full border border-[#d5d5d5] bg-[#fcfcfc]">
-                <View
-                  style={{ width: `${item.percent}%` }}
-                  className="h-full rounded-full bg-[#FF978E]"
-                />
+        <View className="mb-[50px] mt-[5px] rounded-[10px] border border-[#e2e2e2] px-[10px] py-[15px]">
+          {(() => {
+            const daily = analysis.dailyRatioOfRecent7Days || [];
+
+            const todayRatio =
+              daily.length > 0 ? daily[daily.length - 1].avgNegativeRatio * 100 : 0;
+
+            const weekRange = daily.slice(0, 6);
+            const weekAvg =
+              weekRange.length > 0
+                ? (weekRange.reduce((sum, d) => sum + (d.avgNegativeRatio || 0), 0) /
+                    weekRange.length) *
+                  100
+                : 0;
+
+            const items = [
+              {
+                label: '1주 평균',
+                percent: Math.round(weekAvg),
+                text: `${Math.round(weekAvg)}% 부정`,
+              },
+              {
+                label: '오늘 평균',
+                percent: Math.round(todayRatio),
+                text: `${Math.round(todayRatio)}% 부정`,
+              },
+            ];
+
+            return items.map((item, idx) => (
+              <View key={idx} className="flex-row items-center justify-between py-[5px]">
+                <Text className="w-[58px] text-center text-[12px]">{item.label}</Text>
+                <View className="relative h-[17px] w-[200px] overflow-hidden rounded-full border border-[#d5d5d5] bg-[#fcfcfc]">
+                  <View
+                    style={{ width: `${item.percent}%` }}
+                    className="h-full rounded-full bg-[#FF978E]"
+                  />
+                </View>
+                <Text className="w-[60px] pl-[6px] text-center text-[12px]">{item.text}</Text>
               </View>
-              <Text className="w-[60px] pl-[8px] text-[12px]">{item.text}</Text>
-            </View>
-          ))}
+            ));
+          })()}
         </View>
       </ScrollView>
     </View>
