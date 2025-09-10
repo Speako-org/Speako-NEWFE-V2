@@ -60,7 +60,7 @@ export default function Record() {
     isLoading,
     isFetching,
   } = useQuery<RecordType[]>({
-    queryKey: ['transcriptions', dateStr],
+    queryKey: ['records', dateStr],
     queryFn: () => fetchRecordsByDate(dateStr),
     refetchInterval: (query) => {
       const list = query.state.data as RecordType[] | undefined;
@@ -79,11 +79,10 @@ export default function Record() {
   const onDeleteRecord = async (id: string) => {
     try {
       const token = await SecureStore.getItemAsync('accessToken');
-      // 삭제 API 연결 필요
     } catch (e) {
       console.error('삭제 실패:', e);
     } finally {
-      queryClient.invalidateQueries({ queryKey: ['transcriptions', dateStr] });
+      queryClient.invalidateQueries({ queryKey: ['records', dateStr] });
     }
   };
 
