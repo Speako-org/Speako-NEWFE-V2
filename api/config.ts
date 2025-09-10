@@ -23,6 +23,5 @@ export const getApiConfig = () => {
 // API 엔드포인트
 export const API_ENDPOINTS = {
   CHALLENGES: '/api/user/challenges',
-  MYPAGE: '/api/users-info/mypage',
   BADGES: '/api/user/badges',
 } as const;

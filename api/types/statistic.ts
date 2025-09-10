@@ -1,10 +1,34 @@
 import { apiClient } from '../client';
-import { API_ENDPOINTS } from '../config';
+import * as SecureStore from 'expo-secure-store';
 
-// 사용자의 마이페이지 정보 조회
 export const myPageApi = {
-  getMyPageInfo: async (): Promise<MyPageResponse> => {
-    return apiClient.get<MyPageResponse>(API_ENDPOINTS.MYPAGE);
+  getMyPageInfo: async (userId?: string | number): Promise<MyPageResponse> => {
+    const uid = String(userId ?? (await SecureStore.getItemAsync('userId')) ?? '');
+    if (!uid) throw new Error('NO_USER_ID');
+
+    let lastErr: any;
+    for (let i = 0; i < 3; i++) {
+      try {
+        const res = await apiClient.get<MyPageResponse>(`/api/users/${uid}/mypage`);
+        if (!res?.isSuccess) {
+          const msg = res?.message || 'REQUEST_FAILED';
+          const code = res?.code || '500';
+          const error = new Error(msg);
+          (error as any).code = code;
+          throw error;
+        }
+        return res;
+      } catch (e: any) {
+        lastErr = e;
+        const code = (e?.code ?? '').toString();
+        if (code.startsWith('5') || e?.response?.status >= 500) {
+          await new Promise((r) => setTimeout(r, 300 * (i + 1)));
+          continue;
+        }
+        throw e;
+      }
+    }
+    throw lastErr;
   },
 };
 

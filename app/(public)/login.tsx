@@ -64,6 +64,19 @@ const LoginScreen = () => {
           data.bearer;
 
         if (token) {
+          const userId = data.result?.userId || data.userId || data.result?.user?.id || null;
+
+          if (userId) {
+            try {
+              await SecureStore.setItemAsync('userId', String(userId)); // userId 저장
+              console.log('userId 저장에 성공하였습니다.', userId);
+            } catch (e) {
+              console.error('userId 저장 실패:', e);
+            }
+          } else {
+            console.warn('userId가 응답에 없습니다.');
+          }
+
           // 플랫폼별 토큰 저장
           if (Platform.OS === 'web') {
             // 웹 환경

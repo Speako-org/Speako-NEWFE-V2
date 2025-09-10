@@ -24,7 +24,7 @@ export const apiClient = {
   async get<T>(endpoint: string): Promise<T> {
     try {
       const url = `${config.BASE_URL}${endpoint}`;
-      console.log('API 호출 URL:', url);
+      // console.log('API 호출 URL:', url);
 
       const accessToken = await getAuthToken();
       const headers: Record<string, string> = {
@@ -56,7 +56,7 @@ export const apiClient = {
   async post<T>(endpoint: string, data?: any): Promise<T> {
     try {
       const url = `${config.BASE_URL}${endpoint}`;
-      console.log('API 호출 URL:', url);
+      // console.log('API 호출 URL:', url);
 
       const accessToken = await getAuthToken();
       const headers: Record<string, string> = {
@@ -89,7 +89,7 @@ export const apiClient = {
   async patch<T>(endpoint: string, data?: any): Promise<T> {
     try {
       const url = `${config.BASE_URL}${endpoint}`;
-      console.log('API 호출 URL:', url);
+      // console.log('API 호출 URL:', url);
 
       const accessToken = await getAuthToken();
       const headers: Record<string, string> = {

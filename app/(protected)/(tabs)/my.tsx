@@ -1,4 +1,12 @@
-import { View, Text, TouchableOpacity, Image, ScrollView, Modal } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Image,
+  ScrollView,
+  Modal,
+  ActivityIndicator,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import EmotionChart from '../../../components/mypage/Chart/EmotionChart';
@@ -11,9 +19,13 @@ import {
   Achievement as AchievementType,
   MonthlyStat,
 } from '../../../api/types/statistic';
+import * as SecureStore from 'expo-secure-store';
 
 const Mypage = () => {
   const router = useRouter();
+  const [userId, setUserId] = useState<string | null>(null);
+  const [booting, setBooting] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'stats' | 'progress' | 'achievement'>('stats');
   const [profileData, setProfileData] = useState<AchievementType | null>(null);
   const [monthlyStats, setMonthlyStats] = useState<MonthlyStat[] | null>(null);
@@ -22,24 +34,48 @@ const Mypage = () => {
   const [showEmotionChartModal, setShowEmotionChartModal] = useState(false);
   const [modalPosition, setModalPosition] = useState({ x: 0, y: 0 });
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const response = await myPageApi.getMyPageInfo();
-
-        if (response.isSuccess && response.result) {
-          setProfileData(response.result.achievement);
-          setMonthlyStats(response.result.monthlyStats);
-        } else {
-          console.error('마이페이지 데이터 로드 실패:', response.message);
-        }
-      } catch (error) {
-        console.error('데이터 불러오기 실패:', error);
+  const fetchProfile = async (uid: string) => {
+    setErrorMsg(null);
+    try {
+      const res = await myPageApi.getMyPageInfo(uid);
+      setProfileData(res.result.achievement);
+      setMonthlyStats(res.result.monthlyStats);
+    } catch (e: any) {
+      const code = (e?.code ?? '').toString();
+      if (code.startsWith('5')) {
+        setErrorMsg('일시적인 서버 오류가 발생했어요. 잠시 후 다시 시도해 주세요.');
+      } else if (e?.message === 'NO_USER_ID') {
+        setErrorMsg('로그인이 필요합니다.');
+      } else {
+        setErrorMsg(e?.message || '데이터를 불러오지 못했어요.');
       }
-    };
+    }
+  };
 
-    fetchProfile();
+  useEffect(() => {
+    (async () => {
+      try {
+        const uid = await SecureStore.getItemAsync('userId');
+        if (!uid) {
+          setErrorMsg('로그인이 필요합니다.');
+          return;
+        }
+        setUserId(uid);
+        await fetchProfile(uid);
+      } finally {
+        setBooting(false);
+      }
+    })();
   }, []);
+
+  if (booting) {
+    return (
+      <View className="flex-1 items-center justify-center bg-white">
+        <ActivityIndicator size="large" color="#8962C8" />
+        <Text className="mt-2 text-gray-500">정보를 불러오는 중…</Text>
+      </View>
+    );
+  }
 
   const handleTabPress = (tab: 'stats' | 'progress' | 'achievement') => {
     setActiveTab(tab);
@@ -102,20 +138,17 @@ const Mypage = () => {
   const renderAchievementContent = () => (
     <Achievement
       currentMainBadgeId={profileData?.mainBadgeId}
-      onBadgeUpdate={() => {
-        // 프로필 데이터 다시 불러오기
-        const fetchProfile = async () => {
-          try {
-            const response = await myPageApi.getMyPageInfo();
-            if (response.isSuccess && response.result) {
-              setProfileData(response.result.achievement);
-              setMonthlyStats(response.result.monthlyStats);
-            }
-          } catch (error) {
-            console.error('프로필 데이터 새로고침 실패:', error);
+      onBadgeUpdate={async () => {
+        if (!userId) return;
+        try {
+          const res = await myPageApi.getMyPageInfo(userId);
+          if (res.isSuccess && res.result) {
+            setProfileData(res.result.achievement);
+            setMonthlyStats(res.result.monthlyStats);
           }
-        };
-        fetchProfile();
+        } catch (error) {
+          console.error('프로필 데이터 새로고침 실패:', error);
+        }
       }}
     />
   );
