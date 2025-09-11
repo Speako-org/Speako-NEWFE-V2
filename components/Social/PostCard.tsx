@@ -1,7 +1,7 @@
 import { View, Text, TouchableOpacity, Image, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import BadgeCard, { Badge } from './BadgeCard';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { likeArticle, unlikeArticle } from '~/api/articles';
 
 export interface Post {
@@ -31,23 +31,8 @@ export default function PostCard({
   onEditPost,
   onDeletePost,
 }: PostCardProps) {
-  // 아바타 이미지 실패 시 대체 표시
-  const [avatarError, setAvatarError] = useState(false);
   const [showOptionsModal, setShowOptionsModal] = useState(false);
   const [modalPosition, setModalPosition] = useState({ top: 50, right: 24 });
-
-  // 유저 이니셜
-  const initials = useMemo(() => {
-    const name = (post.userName ?? '').trim();
-    if (!name) return 'U';
-    const parts = name.split(/\s+/);
-    const first = parts[0]?.[0] ?? '';
-    const second = parts[1]?.[0] ?? '';
-    return (first + second).toUpperCase();
-  }, [post.userName]);
-
-  const avatarUri = useMemo(() => post.ImageType?.trim() || '', [post.ImageType]);
-  const showImage = !!avatarUri && !avatarError;
 
   const handleLikeToggle = async () => {
     try {
@@ -64,20 +49,13 @@ export default function PostCard({
     <View className="mx-4 mb-4 rounded-2xl border border-gray-200 bg-white px-5 pb-5 pt-6">
       {/* 유저 정보 */}
       <View className="mb-4 mt-1 flex-row items-center">
-        {/* URL 있으면 이미지, 없거나 에러면 이니셜 */}
-        {showImage ? (
-          <Image
-            source={{ uri: avatarUri }}
-            className="mr-3 h-12 w-12 rounded-full"
-            resizeMode="cover"
-            onError={() => setAvatarError(true)}
-            accessibilityLabel={`${post.userName}의 프로필 이미지`}
-          />
-        ) : (
-          <View className="mr-3 h-12 w-12 items-center justify-center rounded-full bg-gray-300">
-            <Text className="text-xl font-semibold text-white">{initials}</Text>
-          </View>
-        )}
+        <Image
+          source={
+            post?.ImageType ? { uri: post.ImageType } : require('~/assets/default-profile.png')
+          }
+          className="mr-3 h-12 w-12 rounded-full"
+          resizeMode="cover"
+        />
 
         <View className="flex-1">
           <View className="flex-row items-center justify-between">

@@ -90,6 +90,7 @@ export default function SocialScreen() {
             likes: item.likedNum,
             comments: item.commentNum,
             isLiked,
+            ImageType: item.ImageType ?? null,
             badge: {
               icon: item.icon,
               title: item.badgeTitle,
