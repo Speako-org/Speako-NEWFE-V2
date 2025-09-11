@@ -20,7 +20,7 @@ export default function BadgeCard({ badge }: BadgeCardProps) {
     : '';
 
   return (
-    <View className="mb-2 mt-2 flex rounded-2xl p-4">
+    <View className="mb-2 mt-2 flex rounded-2xl p-3">
       <View className="flex-row items-center">
         <View className="mr-4 h-16 w-16 items-center justify-center rounded-full border border-gray-200 bg-white">
           <Text className="text-4xl">{badge.icon}</Text>

@@ -119,7 +119,7 @@ export default function PostCard({
                 });
               }}
               className="ml-2">
-              <Ionicons name="ellipsis-vertical" size={20} color="#000" />
+              <Ionicons name="ellipsis-vertical" size={20} color="#888" />
             </TouchableOpacity>
           </View>
           <Text className="text-base text-gray-500">{post.timeAgo}</Text>

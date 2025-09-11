@@ -23,9 +23,12 @@ type MonthlyStat = {
 };
 
 type BadgeItem = {
-  icon: string;
-  title: string;
+  userBadgeId: number;
+  badgeName: string;
   description: string;
+  icon: string;
+  createAt: string;
+  posted: boolean;
 };
 
 type MyPageResponse = {
@@ -34,8 +37,8 @@ type MyPageResponse = {
   message: string;
   result: {
     achievement: Achievement;
-    monthlyStats?: MonthlyStat[];
-    badges?: BadgeItem[];
+    monthlyStats?: MonthlyStat[] | null;
+    userBadges?: BadgeItem[] | null;
   };
 };
 
@@ -74,14 +77,8 @@ export default function OtherProfilePage() {
         if (!mounted) return;
         setAch(data.result.achievement);
 
-        // 서버가 badges 넘겨줘야함 (예시값)
-        const serverBadges = data.result.badges ?? [
-          { icon: '🔥', title: '긍정의 시작', description: '첫번째 긍정적 표현 달성' },
-          { icon: '👍', title: '꾸준한 노력', description: '7일 연속 기록' },
-          { icon: '✅', title: '챌린지 달성', description: '월간 챌린지 100% 달성' },
-          { icon: '⭐️', title: '실천왕', description: '부정적 표현 50% 감소' },
-        ];
-        setBadges(serverBadges);
+        // 서버에서 내려오는 userBadges 사용
+        setBadges(data.result.userBadges ?? []);
       } catch (e: any) {
         if (!mounted) return;
         setErr(e?.message ?? '데이터를 불러오지 못했습니다.');
@@ -130,6 +127,7 @@ export default function OtherProfilePage() {
         className="flex-1"
         contentContainerStyle={{ paddingBottom: 28 }}
         showsVerticalScrollIndicator={false}>
+        {/* 프로필 카드 */}
         <View className="mx-5 mt-3 rounded-2xl bg-white p-7">
           <View className="flex-row items-center">
             <Image
@@ -174,19 +172,17 @@ export default function OtherProfilePage() {
           </View>
         </View>
 
-        <View className="mx-5 mt-4 rounded-2xl bg-white p-7">
+        {/* 획득 뱃지 */}
+        <View className="mx-5 mt-5 rounded-2xl bg-white p-7">
           <Text className="mb-7 text-[18px] font-extrabold text-black">획득한 뱃지</Text>
 
-          {badges.map((b, idx) => (
-            <View key={`${b.title}-${idx}`} className="mb-8 flex-row items-center">
-              {/* 아이콘 */}
-              <View className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-[#F7F7F9]">
+          {badges.map((b) => (
+            <View key={b.userBadgeId} className="mb-3 flex-row items-center">
+              <View className="mr-5 h-12 w-12 items-center justify-center rounded-full bg-white shadow shadow-gray-300">
                 <Text style={{ fontSize: 20 }}>{b.icon}</Text>
               </View>
-
-              {/* 텍스트 */}
               <View className="flex-1">
-                <Text className="text-[15px] font-extrabold text-black">{b.title}</Text>
+                <Text className="text-[15px] font-extrabold text-black">{b.badgeName}</Text>
                 <Text className="mt-1 text-[12px] text-gray-500">{b.description}</Text>
               </View>
             </View>
