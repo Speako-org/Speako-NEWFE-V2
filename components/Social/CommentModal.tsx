@@ -36,6 +36,7 @@ interface CommentModalProps {
   onClose: () => void;
   onAddComment: () => void;
   deleteCommentMutation: UseMutationResult<any, unknown, number, unknown>;
+  currentUserId?: number; // 현재 사용자 ID
 }
 
 function formatKSTDate(iso?: string) {
@@ -61,12 +62,16 @@ export default function CommentModal({
   onClose,
   onAddComment,
   deleteCommentMutation,
+  currentUserId,
 }: CommentModalProps) {
   const { height: screenH } = useWindowDimensions();
   const sheetH = Math.round(screenH * SHEET_RATIO);
 
   const progress = useRef(new Animated.Value(0)).current;
   const [mounted, setMounted] = useState(visible);
+  const [optionsModalVisible, setOptionsModalVisible] = useState(false);
+  const [selectedComment, setSelectedComment] = useState<ServerComment | null>(null);
+  const [optionsPosition, setOptionsPosition] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
     if (visible) {
@@ -87,6 +92,7 @@ export default function CommentModal({
         if (finished) setMounted(false);
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]);
 
   const backdropOpacity = progress.interpolate({
@@ -107,6 +113,31 @@ export default function CommentModal({
     );
   }, [comments]);
 
+  const handleOptionsPress = (comment: ServerComment, event: any) => {
+    event.persist();
+    const { pageX, pageY } = event.nativeEvent;
+    setSelectedComment(comment);
+    setOptionsPosition({ x: pageX, y: pageY });
+    setOptionsModalVisible(true);
+  };
+
+  const handleDeleteComment = () => {
+    if (selectedComment) {
+      deleteCommentMutation.mutate(selectedComment.commentId);
+      setOptionsModalVisible(false);
+      setSelectedComment(null);
+    }
+  };
+
+  const handleReportComment = () => {
+    setOptionsModalVisible(false);
+    setSelectedComment(null);
+  };
+
+  const isMyComment = (comment: ServerComment) => {
+    return currentUserId && comment.userId === currentUserId;
+  };
+
   if (!mounted) return null;
 
   return (
@@ -116,91 +147,127 @@ export default function CommentModal({
       animationType="none"
       presentationStyle="overFullScreen"
       onRequestClose={onClose}>
-      <Animated.View style={{ opacity: backdropOpacity }} className="absolute inset-0 bg-black">
-        <Pressable className="absolute inset-0" onPress={onClose} />
-      </Animated.View>
+      <View className="flex-1">
+        <Animated.View style={{ opacity: backdropOpacity }} className="absolute inset-0 bg-black">
+          <Pressable className="absolute inset-0" onPress={onClose} />
+        </Animated.View>
 
-      <Animated.View
-        pointerEvents="box-none"
-        style={{ height: sheetH, transform: [{ translateY }] }}
-        className="absolute inset-x-0 bottom-0">
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          className="flex-1 overflow-hidden rounded-t-3xl bg-white">
-          {/* 헤더 */}
-          <View className="flex-row items-center justify-between border-b border-gray-200 px-4 py-3">
-            <Text className="mx-2.5 mt-1.5 text-lg font-bold">댓글</Text>
-            <TouchableOpacity onPress={onClose}>
-              <Ionicons name="close" size={24} color="#6B7280" />
-            </TouchableOpacity>
-          </View>
+        <Animated.View
+          pointerEvents="box-none"
+          style={{ height: sheetH, transform: [{ translateY }] }}
+          className="absolute inset-x-0 bottom-0">
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+            className="flex-1 overflow-hidden rounded-t-3xl bg-white">
+            {/* 헤더 */}
+            <View className="flex-row items-center justify-between border-b border-gray-100 px-4 py-4">
+              <Text className="mx-3 mt-1.5 text-xl font-bold">댓글</Text>
+              <TouchableOpacity onPress={onClose}>
+                <Ionicons name="close" size={25} color="#6B7280" className="mr-2" />
+              </TouchableOpacity>
+            </View>
 
-          {/* 댓글 리스트 */}
-          <ScrollView
-            className="flex-1"
-            contentContainerStyle={{ padding: 16 }}
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="on-drag"
-            showsVerticalScrollIndicator
-            bounces={false}
-            scrollEventThrottle={16}>
-            {sorted.map((c) => (
-              <View key={String(c.commentId)} className="mb-4">
-                <View className="mb-2 flex-row items-start">
-                  {c.ImageType ? (
-                    <Image
-                      source={{ uri: c.ImageType }}
-                      className="mr-3 h-10 w-10 rounded-full bg-gray-200"
-                      resizeMode="cover"
-                    />
-                  ) : (
-                    <View className="mr-3 h-10 w-10 rounded-full bg-gray-300" />
-                  )}
-                  <View className="flex-1">
-                    <View className="mb-1 flex-row items-center justify-between">
-                      <View className="flex-row items-center">
-                        <Text className="font-semibold">{c.username}</Text>
-                        <Text className="ml-2 text-xs text-gray-500">
-                          {formatKSTDate(c.createdAt)}
-                        </Text>
+            {/* 댓글 리스트 */}
+            <ScrollView
+              className="flex-1"
+              contentContainerStyle={{ padding: 20, paddingBottom: 20 }}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="interactive"
+              showsVerticalScrollIndicator
+              bounces
+              scrollEventThrottle={16}
+              automaticallyAdjustKeyboardInsets>
+              {sorted.map((c) => (
+                <View key={String(c.commentId)} className="mb-6">
+                  <View className="mb-3 flex-row items-start">
+                    {c.ImageType ? (
+                      <Image
+                        source={{ uri: c.ImageType }}
+                        className="mr-4 h-14 w-14 rounded-full border border-gray-200 bg-gray-200"
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <View className="mr-4 h-14 w-14 rounded-full border border-gray-200 bg-gray-300" />
+                    )}
+                    <View className="flex-1">
+                      <View className="mb-1 flex-row items-center justify-between">
+                        <View className="flex-row items-center">
+                          <Text className="text-lg font-semibold">{c.username}</Text>
+                          <Text className="ml-2 text-sm text-gray-500">
+                            {formatKSTDate(c.createdAt)}
+                          </Text>
+                        </View>
+
+                        <TouchableOpacity onPress={(event) => handleOptionsPress(c, event)}>
+                          <Ionicons name="ellipsis-horizontal" size={20} color="#6B7280" />
+                        </TouchableOpacity>
                       </View>
-                      {/* 휴지통 아이콘 */}
-                      <TouchableOpacity onPress={() => deleteCommentMutation.mutate(c.commentId)}>
-                        <Ionicons name="trash-outline" size={16} color="#EF4444" />
-                      </TouchableOpacity>
+                      <Text className="text-base leading-6">{c.content}</Text>
                     </View>
-                    <Text className="text-sm leading-5">{c.content}</Text>
                   </View>
                 </View>
-              </View>
-            ))}
-          </ScrollView>
+              ))}
+            </ScrollView>
 
-          {/* 입력 바 */}
-          <View className="flex-row items-center border-t border-gray-200 px-4 pb-6 pt-4">
-            <View className="flex-1 rounded-full bg-gray-100 px-4 py-3">
-              <TextInput
-                value={commentText}
-                onChangeText={setCommentText}
-                placeholder="댓글을 입력하세요..."
-                placeholderTextColor="#9CA3AF"
-                className="text-[15px] text-black"
-                returnKeyType="send"
-                onSubmitEditing={onAddComment}
-              />
-            </View>
-            {commentText.trim() ? (
-              <TouchableOpacity onPress={onAddComment} className="ml-2">
-                <Ionicons name="send" size={20} color="#8953E0" />
-              </TouchableOpacity>
-            ) : (
-              <View className="ml-2 opacity-40">
-                <Ionicons name="send" size={20} color="#9CA3AF" />
+            {/* 입력 바 */}
+            <View className="flex-row items-center border-t border-gray-100 px-6 py-3 pb-11">
+              <View className="flex-grow rounded-2xl bg-gray-100 px-5 py-4">
+                <TextInput
+                  value={commentText}
+                  onChangeText={setCommentText}
+                  placeholder="댓글을 입력하세요..."
+                  placeholderTextColor="#9CA3AF"
+                  className="text-[16px] text-black"
+                  returnKeyType="send"
+                  onSubmitEditing={onAddComment}
+                  multiline={false}
+                  blurOnSubmit={false}
+                  enablesReturnKeyAutomatically
+                />
               </View>
-            )}
+              {commentText.trim() ? (
+                <TouchableOpacity onPress={onAddComment} className="ml-3">
+                  <Ionicons name="send" size={26} color="#8953E0" className="px-1" />
+                </TouchableOpacity>
+              ) : (
+                <View className="ml-3 opacity-40">
+                  <Ionicons name="send" size={26} color="#9CA3AF" className="px-1" />
+                </View>
+              )}
+            </View>
+          </KeyboardAvoidingView>
+        </Animated.View>
+
+        {/* 옵션 모달 */}
+        {optionsModalVisible && (
+          <View className="absolute inset-0">
+            <Pressable className="absolute inset-0" onPress={() => setOptionsModalVisible(false)} />
+            <View
+              className="absolute min-w-[120px] rounded-xl border border-gray-300 bg-white"
+              style={{
+                left: Math.max(10, optionsPosition.x - 110),
+                top: optionsPosition.y + 10,
+              }}>
+              {selectedComment && isMyComment(selectedComment) ? (
+                <TouchableOpacity
+                  onPress={handleDeleteComment}
+                  className="flex-row items-center px-4 py-3">
+                  <Ionicons name="trash-outline" size={18} color="#EF4444" />
+                  <Text className="ml-2 font-medium text-red-500">삭제하기</Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  onPress={handleReportComment}
+                  className="flex-row items-center px-4 py-3">
+                  <Ionicons name="flag-outline" size={18} color="#6B7280" />
+                  <Text className="ml-2 font-medium text-gray-700">신고하기</Text>
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
-        </KeyboardAvoidingView>
-      </Animated.View>
+        )}
+      </View>
     </Modal>
   );
 }

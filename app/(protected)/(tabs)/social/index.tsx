@@ -33,6 +33,7 @@ export default function SocialScreen() {
   const [currentArticleId, setCurrentArticleId] = useState<number | null>(null);
   const [likedSet, setLikedSet] = useState<Set<number>>(new Set());
   const [shareModalVisible, setShareModalVisible] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<number | undefined>(undefined);
 
   const { data: comments = [] } = useComments(currentArticleId);
   const addComment = useAddComment(currentArticleId);
@@ -56,6 +57,19 @@ export default function SocialScreen() {
       setLikedSet(loaded);
     })();
   }, [userKey]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const userId = await SecureStore.getItemAsync('userId');
+        if (userId) {
+          setCurrentUserId(parseInt(userId, 10));
+        }
+      } catch (e) {
+        console.warn('Failed to load userId from SecureStore', e);
+      }
+    })();
+  }, []);
 
   const fetchArticles = useCallback(async () => {
     setLoading(true);
@@ -228,6 +242,7 @@ export default function SocialScreen() {
         onClose={closeComments}
         onAddComment={handleAddComment}
         deleteCommentMutation={deleteCommentMutation}
+        currentUserId={currentUserId}
       />
 
       <ShareBadgeModal
