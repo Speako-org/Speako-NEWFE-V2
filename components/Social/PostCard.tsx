@@ -3,9 +3,11 @@ import { Ionicons } from '@expo/vector-icons';
 import BadgeCard, { Badge } from './BadgeCard';
 import { useState } from 'react';
 import { likeArticle, unlikeArticle } from '~/api/articles';
+import { useRouter } from 'expo-router';
 
 export interface Post {
   id: number;
+  userId: number;
   userName: string;
   badge: Badge;
   timeAgo: string;
@@ -31,6 +33,7 @@ export default function PostCard({
   onEditPost,
   onDeletePost,
 }: PostCardProps) {
+  const router = useRouter();
   const [showOptionsModal, setShowOptionsModal] = useState(false);
   const [modalPosition, setModalPosition] = useState({ top: 50, right: 24 });
 
@@ -45,17 +48,28 @@ export default function PostCard({
     }
   };
 
+  console.log(post);
+
+  const handleNavigateToProfile = () => {
+    router.push({
+      pathname: '/(protected)/other-profile/[id]' as any,
+      params: { id: String(post.userId) },
+    });
+  };
+
   return (
     <View className="mx-4 mb-4 rounded-2xl border border-gray-200 bg-white px-5 pb-5 pt-6">
       {/* 유저 정보 */}
       <View className="mb-4 mt-1 flex-row items-center">
-        <Image
-          source={
-            post?.ImageType ? { uri: post.ImageType } : require('~/assets/default-profile.png')
-          }
-          className="mr-3 h-12 w-12 rounded-full"
-          resizeMode="cover"
-        />
+        <TouchableOpacity onPress={handleNavigateToProfile}>
+          <Image
+            source={
+              post?.ImageType ? { uri: post.ImageType } : require('~/assets/default-profile.png')
+            }
+            className="mr-3 h-12 w-12 rounded-full"
+            resizeMode="cover"
+          />
+        </TouchableOpacity>
 
         <View className="flex-1">
           <View className="flex-row items-center justify-between">

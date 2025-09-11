@@ -31,7 +31,9 @@ interface ShareBadgeModalProps {
     badge: Badge,
     server?: {
       articleId?: number;
+      userId?: number;
       username?: string;
+      ImageType?: string;
       createdAt?: string;
       likedNum?: number;
       commentNum?: number;

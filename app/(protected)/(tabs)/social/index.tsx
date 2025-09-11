@@ -84,6 +84,7 @@ export default function SocialScreen() {
 
           return {
             id,
+            userId: Number(item.userId),
             userName: item.username,
             timeAgo: formattedTime,
             content: item.content,
@@ -235,7 +236,9 @@ export default function SocialScreen() {
         onSubmit={(content, badge, server) => {
           const newPost: Post = {
             id: Number(server?.articleId ?? Date.now()),
+            userId: Number(server?.userId ?? 0),
             userName: server?.username ?? '나',
+            ImageType: (server as any)?.ImageType ?? undefined,
             timeAgo: dayjs(server?.createdAt ?? new Date()).format('YYYY-MM-DD HH:mm'),
             content,
             likes: server?.likedNum ?? 0,
