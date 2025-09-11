@@ -155,7 +155,20 @@ export default function RecordDate({
           <TouchableOpacity
             onPress={() => {
               openedRef.current?.close();
-              onDeleteRecord(id);
+              Alert.alert('녹음 삭제', '이 녹음을 삭제하시겠습니까?', [
+                {
+                  text: '취소',
+                  style: 'cancel',
+                },
+                {
+                  text: '삭제',
+                  style: 'destructive',
+                  onPress: () => {
+                    console.log('삭제 버튼 클릭됨, ID:', id);
+                    onDeleteRecord(id);
+                  },
+                },
+              ]);
             }}
             className="items-center justify-center"
             accessibilityLabel="기록 삭제">

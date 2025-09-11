@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import type { UseMutationResult } from '@tanstack/react-query';
 
 export interface ServerComment {
@@ -66,6 +67,7 @@ export default function CommentModal({
 }: CommentModalProps) {
   const { height: screenH } = useWindowDimensions();
   const sheetH = Math.round(screenH * SHEET_RATIO);
+  const router = useRouter();
 
   const progress = useRef(new Animated.Value(0)).current;
   const [mounted, setMounted] = useState(visible);
@@ -138,6 +140,22 @@ export default function CommentModal({
     return currentUserId && comment.userId === currentUserId;
   };
 
+  const handleProfilePress = (comment: ServerComment) => {
+    // 댓글창 닫기
+    onClose();
+
+    if (currentUserId && comment.userId === currentUserId) {
+      // 내 프로필이면 마이페이지로
+      router.push('/(protected)/(tabs)/my' as any);
+    } else {
+      // 상대방 프로필이면 상대 프로필로
+      router.push({
+        pathname: '/(protected)/other-profile/[id]' as any,
+        params: { id: String(comment.userId) },
+      });
+    }
+  };
+
   if (!mounted) return null;
 
   return (
@@ -181,15 +199,17 @@ export default function CommentModal({
               {sorted.map((c) => (
                 <View key={String(c.commentId)} className="mb-6">
                   <View className="mb-3 flex-row items-start">
-                    {c.ImageType ? (
-                      <Image
-                        source={{ uri: c.ImageType }}
-                        className="mr-4 h-14 w-14 rounded-full border border-gray-200 bg-gray-200"
-                        resizeMode="cover"
-                      />
-                    ) : (
-                      <View className="mr-4 h-14 w-14 rounded-full border border-gray-200 bg-gray-300" />
-                    )}
+                    <TouchableOpacity onPress={() => handleProfilePress(c)}>
+                      {c.ImageType ? (
+                        <Image
+                          source={{ uri: c.ImageType }}
+                          className="mr-4 h-14 w-14 rounded-full border border-gray-200 bg-gray-200"
+                          resizeMode="cover"
+                        />
+                      ) : (
+                        <View className="mr-4 h-14 w-14 rounded-full border border-gray-200 bg-gray-300" />
+                      )}
+                    </TouchableOpacity>
                     <View className="flex-1">
                       <View className="mb-1 flex-row items-center justify-between">
                         <View className="flex-row items-center">

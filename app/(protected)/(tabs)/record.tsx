@@ -72,17 +72,20 @@ export default function Record() {
       return hasInProgress ? 5000 : false;
     },
     staleTime: 10_000,
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: true,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
-  const onDeleteRecord = async (id: string) => {
-    try {
-    } catch (e) {
-      console.error('삭제 실패:', e);
-    } finally {
-      queryClient.invalidateQueries({ queryKey: ['records', dateStr] });
-    }
+  const onDeleteRecord = (id: string) => {
+    console.log('삭제할 녹음 ID:', id);
+
+    // UI에서 즉시 삭제
+    queryClient.setQueryData(['records', dateStr], (oldData: RecordType[] | undefined) => {
+      if (!oldData) return oldData;
+      const filteredData = oldData.filter((record) => record.id !== id);
+
+      return filteredData;
+    });
   };
 
   const loading = isLoading || isFetching;
