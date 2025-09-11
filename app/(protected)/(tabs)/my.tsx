@@ -254,7 +254,7 @@ const Mypage = () => {
             </View>
             <View className="flex-1 items-center">
               <Text className="mb-[5px] text-[18px] font-bold text-[#A088E0]">
-                +{((profileData?.badgeAcquisitionRate ?? 0) * 100).toFixed(0)}%
+                +{(profileData?.badgeAcquisitionRate ?? 0).toFixed(0)}%
               </Text>
               <View className="items-center">
                 <Text className="text-[14px] font-semibold text-gray-500">개선율</Text>
