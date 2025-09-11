@@ -1,9 +1,10 @@
 import { View, Text, TouchableOpacity, Image, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import BadgeCard, { Badge } from './BadgeCard';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { likeArticle, unlikeArticle } from '~/api/articles';
 import { useRouter } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
 
 export interface Post {
   id: number;
@@ -36,6 +37,19 @@ export default function PostCard({
   const router = useRouter();
   const [showOptionsModal, setShowOptionsModal] = useState(false);
   const [modalPosition, setModalPosition] = useState({ top: 50, right: 24 });
+  const [myUserId, setMyUserId] = useState<string | null>(null);
+
+  // 내 userId 로드
+  useEffect(() => {
+    (async () => {
+      try {
+        const uid = await SecureStore.getItemAsync('userId');
+        setMyUserId(uid ?? null);
+      } catch (e) {
+        console.warn('Failed to load userId from SecureStore', e);
+      }
+    })();
+  }, []);
 
   const handleLikeToggle = async () => {
     try {
@@ -48,13 +62,25 @@ export default function PostCard({
     }
   };
 
-  console.log(post);
-
   const handleNavigateToProfile = () => {
-    router.push({
-      pathname: '/(protected)/other-profile/[id]' as any,
-      params: { id: String(post.userId) },
-    });
+    if (!myUserId) {
+      router.push({
+        pathname: '/(protected)/other-profile/[id]' as any,
+        params: { id: String(post.userId) },
+      });
+      return;
+    }
+
+    if (String(post.userId) === myUserId) {
+      // 내 프로필이면 마이페이지로
+      router.push('/(protected)/(tabs)/my' as any);
+    } else {
+      // 타인이면 상대 프로필로
+      router.push({
+        pathname: '/(protected)/other-profile/[id]' as any,
+        params: { id: String(post.userId) },
+      });
+    }
   };
 
   return (
