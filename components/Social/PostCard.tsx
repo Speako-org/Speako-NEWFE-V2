@@ -127,27 +127,31 @@ export default function PostCard({
       </View>
 
       {/* 게시글 내용 */}
-      <Text className="mb-3 ml-2 mt-3 text-lg font-medium leading-7">{post.content}</Text>
+      <Text className="mb-1 ml-2 mt-5 text-lg font-medium leading-7">{post.content}</Text>
 
       {/* 뱃지 */}
-      <View className="mb-4 flex rounded-xl border border-gray-100 bg-pink-50">
+      <View className="mb-2 mt-3 flex rounded-xl border border-gray-100 bg-pink-50">
         <BadgeCard badge={post.badge} />
       </View>
 
       {/* 좋아요 / 댓글 */}
       <View className="ml-1 flex-row items-center">
-        <TouchableOpacity onPress={handleLikeToggle} className="mr-4 flex-row items-center">
+        <TouchableOpacity
+          onPress={handleLikeToggle}
+          className="mr-1 flex-row items-center px-2 pb-1 pt-2">
           <Ionicons
             name={post.isLiked ? 'heart' : 'heart-outline'}
-            size={23}
-            color={post.isLiked ? '#EF4444' : '#000'}
+            size={25}
+            color={post.isLiked ? '#EF4444' : '#6B7280'}
           />
-          <Text className="ml-1 text-xl text-gray-600">{post.likes}</Text>
+          <Text className="ml-2 text-xl text-gray-600">{post.likes}</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity className="flex-row items-center" onPress={() => onCommentPress(post.id)}>
-          <Ionicons name="chatbubble-outline" size={22} color="#000" />
-          <Text className="ml-1 text-xl text-gray-600">{post.comments}</Text>
+        <TouchableOpacity
+          className="flex-row items-center px-2 pb-1 pt-2"
+          onPress={() => onCommentPress(post.id)}>
+          <Ionicons name="chatbubble-outline" size={23} color="#6B7280" />
+          <Text className="ml-2 text-xl text-gray-600">{post.comments}</Text>
         </TouchableOpacity>
       </View>
 
