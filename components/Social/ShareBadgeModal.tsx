@@ -31,7 +31,9 @@ interface ShareBadgeModalProps {
     badge: Badge,
     server?: {
       articleId?: number;
+      userId?: number;
       username?: string;
+      ImageType?: string;
       createdAt?: string;
       likedNum?: number;
       commentNum?: number;
@@ -166,7 +168,7 @@ export default function ShareBadgeModal({ visible, onClose, onSubmit }: ShareBad
                 return (
                   <TouchableOpacity
                     disabled={isDisabled}
-                    className={`relative mx-2 h-14 w-14 items-center justify-center rounded-xl border-2
+                    className={`relative mr-3 h-12 w-12 items-center justify-center rounded-xl border-2
                       ${isSelected ? 'border-purple-500 bg-purple-50' : 'border-gray-200 bg-white'}
                       ${isDisabled ? 'opacity-40' : ''}
                     `}
@@ -188,7 +190,7 @@ export default function ShareBadgeModal({ visible, onClose, onSubmit }: ShareBad
 
             {/* 선택된 뱃지 미리보기 */}
             {selectedBadge ? (
-              <View className="mt-1.5 flex rounded-lg bg-white">
+              <View className="flex rounded-lg bg-white">
                 <BadgeCard badge={selectedBadge} />
               </View>
             ) : (

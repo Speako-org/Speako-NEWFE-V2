@@ -7,7 +7,7 @@ interface TabHeaderProps {
 
 export default function TabHeader({ activeTab, setActiveTab }: TabHeaderProps) {
   return (
-    <View className="flex-row rounded-xl bg-gray-100 p-1">
+    <View className="flex-row rounded-xl bg-gray-200 p-1">
       {['feed', 'friends'].map((tab) => (
         <TouchableOpacity
           key={tab}

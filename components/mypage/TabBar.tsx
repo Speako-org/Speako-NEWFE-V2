@@ -7,7 +7,7 @@ interface TabBarProps {
 
 const TabBar = ({ activeTab, onTabPress }: TabBarProps) => {
   return (
-    <View className="mx-[20px] mb-3 flex-row rounded-lg bg-gray-100 p-1">
+    <View className="mx-[20px] mb-3 flex-row rounded-lg bg-gray-200 p-1">
       <TouchableOpacity
         className={`flex-1 items-center justify-center rounded-lg py-2 ${activeTab === 'stats' ? 'bg-black' : ''}`}
         onPress={() => onTabPress('stats')}>
