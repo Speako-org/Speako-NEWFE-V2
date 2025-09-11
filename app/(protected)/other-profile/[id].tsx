@@ -174,10 +174,10 @@ export default function OtherProfilePage() {
 
         {/* 획득 뱃지 */}
         <View className="mx-5 mt-5 rounded-2xl bg-white p-7">
-          <Text className="mb-7 text-[18px] font-extrabold text-black">획득한 뱃지</Text>
+          <Text className="text-[18px] font-extrabold text-black">획득한 뱃지</Text>
 
           {badges.map((b) => (
-            <View key={b.userBadgeId} className="mb-3 flex-row items-center">
+            <View key={b.userBadgeId} className="mt-7 flex-row items-center">
               <View className="mr-5 h-12 w-12 items-center justify-center rounded-full bg-white shadow shadow-gray-300">
                 <Text style={{ fontSize: 20 }}>{b.icon}</Text>
               </View>
