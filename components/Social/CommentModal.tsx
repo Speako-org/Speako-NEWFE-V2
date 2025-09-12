@@ -12,10 +12,13 @@ import {
   Animated,
   Easing,
   useWindowDimensions,
+  Alert,
 } from 'react-native';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import type { UseMutationResult } from '@tanstack/react-query';
+import { useRouter } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
 
 export interface ServerComment {
   commentId: number;
@@ -64,6 +67,7 @@ export default function CommentModal({
   deleteCommentMutation,
   currentUserId,
 }: CommentModalProps) {
+  const router = useRouter();
   const { height: screenH } = useWindowDimensions();
   const sheetH = Math.round(screenH * SHEET_RATIO);
 
@@ -72,6 +76,19 @@ export default function CommentModal({
   const [optionsModalVisible, setOptionsModalVisible] = useState(false);
   const [selectedComment, setSelectedComment] = useState<ServerComment | null>(null);
   const [optionsPosition, setOptionsPosition] = useState({ x: 0, y: 0 });
+  const [myUserId, setMyUserId] = useState<string | null>(null);
+
+  // 내 userId 로드
+  useEffect(() => {
+    (async () => {
+      try {
+        const uid = await SecureStore.getItemAsync('userId');
+        setMyUserId(uid ?? null);
+      } catch (e) {
+        console.warn('Failed to load userId from SecureStore', e);
+      }
+    })();
+  }, []);
 
   useEffect(() => {
     if (visible) {
@@ -92,7 +109,6 @@ export default function CommentModal({
         if (finished) setMounted(false);
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]);
 
   const backdropOpacity = progress.interpolate({
@@ -133,6 +149,28 @@ export default function CommentModal({
     setOptionsModalVisible(false);
     setSelectedComment(null);
   };
+
+  const navigateToProfile = useCallback(
+    (userId?: number) => {
+      const targetId = userId != null ? String(userId) : undefined;
+
+      onClose();
+
+      requestAnimationFrame(() => {
+        if (myUserId && targetId && targetId === myUserId) {
+          router.push('/(protected)/(tabs)/my' as any);
+        } else if (targetId) {
+          router.push({
+            pathname: '/(protected)/other-profile/[id]' as any,
+            params: { id: targetId },
+          });
+        } else {
+          Alert.alert('안내', '프로필 정보를 찾을 수 없습니다.');
+        }
+      });
+    },
+    [router, myUserId, onClose]
+  );
 
   const isMyComment = (comment: ServerComment) => {
     return currentUserId && comment.userId === currentUserId;
@@ -181,19 +219,27 @@ export default function CommentModal({
               {sorted.map((c) => (
                 <View key={String(c.commentId)} className="mb-6">
                   <View className="mb-3 flex-row items-start">
-                    {c.ImageType ? (
-                      <Image
-                        source={{ uri: c.ImageType }}
-                        className="mr-4 h-14 w-14 rounded-full border border-gray-200 bg-gray-200"
-                        resizeMode="cover"
-                      />
-                    ) : (
-                      <View className="mr-4 h-14 w-14 rounded-full border border-gray-200 bg-gray-300" />
-                    )}
+                    {/* ✅ 프로필 이미지 터치 시 프로필로 이동 */}
+                    <TouchableOpacity
+                      onPress={() => navigateToProfile(c.userId)}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      className="mr-4">
+                      {c.ImageType ? (
+                        <Image
+                          source={{ uri: c.ImageType }}
+                          className="h-14 w-14 rounded-full border border-gray-200 bg-gray-200"
+                          resizeMode="cover"
+                        />
+                      ) : (
+                        <View className="h-14 w-14 rounded-full border border-gray-200 bg-gray-300" />
+                      )}
+                    </TouchableOpacity>
+
                     <View className="flex-1">
                       <View className="mb-1 flex-row items-center justify-between">
                         <View className="flex-row items-center">
                           <Text className="text-lg font-semibold">{c.username}</Text>
+
                           <Text className="ml-2 text-sm text-gray-500">
                             {formatKSTDate(c.createdAt)}
                           </Text>
@@ -203,6 +249,7 @@ export default function CommentModal({
                           <Ionicons name="ellipsis-horizontal" size={20} color="#6B7280" />
                         </TouchableOpacity>
                       </View>
+
                       <Text className="text-base leading-6">{c.content}</Text>
                     </View>
                   </View>
