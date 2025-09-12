@@ -1,9 +1,18 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Text, View, ScrollView, TouchableOpacity } from 'react-native';
+import {
+  ActivityIndicator,
+  Text,
+  View,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+  TextInput,
+} from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Entypo } from '@expo/vector-icons';
 import CircleChart from '~/components/CircleChart/CircleChart';
 import * as SecureStore from 'expo-secure-store';
+import { updateTranscriptionTitle } from '~/api/transcription';
 
 type AnalysisResult = {
   transcriptionId: number;
@@ -25,10 +34,16 @@ type AnalysisResult = {
 
 export default function RecordDetail() {
   const router = useRouter();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const params = useLocalSearchParams();
+  const id = Array.isArray(params.id) ? params.id[0] : params.id;
 
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // 타이틀 수정 상태
+  const [editOpen, setEditOpen] = useState(false);
+  const [newTitle, setNewTitle] = useState('');
+  const [saving, setSaving] = useState(false);
 
   const BASE_URL = 'https://speako.site/api';
 
@@ -58,6 +73,44 @@ export default function RecordDetail() {
     fetchAnalysis();
   }, [id]);
 
+  if (!id) {
+    return (
+      <View className="flex-1 items-center justify-center bg-white">
+        <Text className="text-red-500">잘못된 접근입니다. (id 없음)</Text>
+        <TouchableOpacity onPress={() => router.back()} className="px-4 py-4">
+          <Text className="font-semibold text-[#8962c8]">이전 화면으로</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const negativeItems = analysis?.negativeSentencesTop3 ?? analysis?.negativeSentencesTop3 ?? [];
+  const feedbackItems = analysis?.feedbackSentences ?? [];
+
+  const handleSaveTitle = async () => {
+    if (!id) return;
+    if (!newTitle.trim()) {
+      Alert.alert('안내', '제목을 입력해주세요.');
+      return;
+    }
+    try {
+      setSaving(true);
+      await updateTranscriptionTitle(id, newTitle.trim());
+
+      setAnalysis((prev) => (prev ? { ...prev, title: newTitle.trim() } : prev));
+      setEditOpen(false);
+    } catch (e: any) {
+      Alert.alert('오류', e?.message ?? '제목 수정에 실패했습니다.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditOpen(false);
+    setNewTitle('');
+  };
+
   if (loading) {
     return (
       <View className="flex-1 items-center justify-center bg-white">
@@ -79,22 +132,64 @@ export default function RecordDetail() {
     );
   }
 
-  const negativeItems = analysis.negativeSentencesTop3 ?? (analysis as any).negativeWordsTop3 ?? [];
-
-  const feedbackItems = analysis.feedbackSentences ?? [];
-
   return (
     <View className="flex-1 bg-white px-[25px] pt-[80px]">
       {/* 하단 탭바 배경 */}
       <View className="absolute bottom-0 h-[111px] w-full bg-white" />
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        <View className="relative z-10 mb-[25px] flex-row items-center justify-center">
+        <View className="relative z-10 mb-[20px] h-[30px] flex-row items-center justify-center">
           <TouchableOpacity onPress={() => router.back()} className="absolute left-0 z-20">
             <Entypo name="chevron-thin-left" size={20} />
           </TouchableOpacity>
 
-          <Text className="flex-1 text-center text-[18px] font-bold">{analysis.title}</Text>
+          {!editOpen ? (
+            // 보기 모드
+            <View className="ml-10 flex-row items-center">
+              <Text className="text-center text-[18px] font-bold" numberOfLines={1}>
+                {analysis.title}
+              </Text>
+              <TouchableOpacity
+                className="ml-2 p-1"
+                onPress={() => {
+                  setNewTitle(analysis.title || '');
+                  setEditOpen(true);
+                }}>
+                <Entypo name="pencil" size={18} color="#666" />
+              </TouchableOpacity>
+            </View>
+          ) : (
+            // 수정 모드
+            <View className="ml-10 flex-row items-center">
+              <TextInput
+                value={newTitle}
+                onChangeText={setNewTitle}
+                autoFocus
+                maxLength={50}
+                placeholder="새 제목"
+                returnKeyType="done"
+                onSubmitEditing={handleSaveTitle}
+                onBlur={handleSaveTitle}
+                className="w-[150px] rounded-lg border border-[#ddd] px-2 py-2 text-[15px]"
+              />
+              {saving ? (
+                <ActivityIndicator className="ml-8" size="small" color="#8962C8" />
+              ) : (
+                <>
+                  <TouchableOpacity
+                    onPress={handleSaveTitle}
+                    className="ml-2 rounded-full bg-[#8962C8] p-1">
+                    <Entypo name="check" size={15} color="white" />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={handleCancelEdit}
+                    className="ml-2 rounded-full bg-[#ddd] p-1">
+                    <Entypo name="cross" size={15} color="black" />
+                  </TouchableOpacity>
+                </>
+              )}
+            </View>
+          )}
         </View>
 
         {/* 음성 인식 결과 */}

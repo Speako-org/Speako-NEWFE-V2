@@ -220,7 +220,7 @@ export default function RecordDate({
                     e.stopPropagation();
                     onPlayRecordedAudio(item.id);
                   }}
-                  className="mr-3 h-8 w-8 items-center justify-center rounded-full bg-[#8962c8]">
+                  className="mr-2.5 h-8 w-8 items-center justify-center rounded-full bg-[#8962c8] pl-0.5">
                   <Ionicons
                     name={playingStates.get(item.id) ? 'pause' : 'play'}
                     size={16}
@@ -228,7 +228,7 @@ export default function RecordDate({
                   />
                 </TouchableOpacity>
               )}
-              <Text className="mr-2 text-[14px] text-[#777]">{item.duration}</Text>
+              <Text className="ml-1 w-[45px] text-[14px] text-[#777]">{item.duration}</Text>
             </View>
           </View>
 
