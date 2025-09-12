@@ -13,6 +13,7 @@ import { Entypo } from '@expo/vector-icons';
 import CircleChart from '~/components/CircleChart/CircleChart';
 import * as SecureStore from 'expo-secure-store';
 import { updateTranscriptionTitle } from '~/api/transcription';
+import { useRecordTitleStore } from '~/store/recordTitle';
 
 type AnalysisResult = {
   transcriptionId: number;
@@ -98,6 +99,7 @@ export default function RecordDetail() {
       await updateTranscriptionTitle(id, newTitle.trim());
 
       setAnalysis((prev) => (prev ? { ...prev, title: newTitle.trim() } : prev));
+      useRecordTitleStore.getState().setTitle(id, newTitle.trim());
       setEditOpen(false);
     } catch (e: any) {
       Alert.alert('오류', e?.message ?? '제목 수정에 실패했습니다.');
