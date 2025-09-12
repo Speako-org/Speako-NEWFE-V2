@@ -252,7 +252,7 @@ export default function RecordDetail() {
               {negativeItems.map((sentence: string, idx: number) => (
                 <View
                   key={`${idx}-${sentence.slice(0, 12)}`}
-                  className="rounded-[8px] bg-[#ffe9e9] p-[10px]">
+                  className="mb-2 rounded-[8px] bg-[#ffe9e9] p-[10px]">
                   <Text className="text-[13px] leading-[18px]">{sentence}</Text>
                 </View>
               ))}
