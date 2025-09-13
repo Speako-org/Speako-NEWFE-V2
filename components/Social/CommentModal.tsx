@@ -18,7 +18,6 @@ import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import type { UseMutationResult } from '@tanstack/react-query';
-import { useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 
 export interface ServerComment {
@@ -110,6 +109,7 @@ export default function CommentModal({
         if (finished) setMounted(false);
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]);
 
   const backdropOpacity = progress.interpolate({
