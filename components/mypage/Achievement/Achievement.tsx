@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Image, Modal } from 'react-native';
-import { useRouter } from 'expo-router';
+import { View, Text, TouchableOpacity, Image, Modal, Alert } from 'react-native';
+
 import BadgeActionModal from '../../Modal/BadgeActionModal';
 import BadgeConfirmModal from '../../Modal/BadgeConfirmModal';
 import ShareBadgeModal from '../../Social/ShareBadgeModal';
 import { badgeApi, Badge as BadgeType } from '../../../api/types/badge';
 import { apiClient } from '../../../api/client';
+import { useRouter } from 'expo-router';
 
 // 컴포넌트에서 사용하는 Badge 인터페이스 (UI용)
 interface BadgeItem {
@@ -185,7 +186,18 @@ const Achievement = ({ currentMainBadgeId, onBadgeUpdate }: AchievementProps) =>
         badges.map((badge, index) => (
           <View key={index} className="mb-3 flex-row items-center rounded-lg bg-white p-2">
             <TouchableOpacity
-              className="mr-5 h-16 w-16 items-center justify-center rounded-full border border-gray-200 bg-white shadow-sm active:bg-gray-50"
+              className="mr-5 h-16 w-16 items-center justify-center rounded-full border border-gray-200 bg-white"
+              style={{
+                shadowColor: '#000',
+                shadowOffset: {
+                  width: 1,
+                  height: 1,
+                },
+                shadowOpacity: 0.1,
+                shadowRadius: 3,
+                elevation: 5,
+              }}
+              activeOpacity={1}
               onPress={() => handleBadgePress(badge, index)}>
               <Text className="text-3xl">{badge.icon}</Text>
             </TouchableOpacity>
@@ -216,12 +228,27 @@ const Achievement = ({ currentMainBadgeId, onBadgeUpdate }: AchievementProps) =>
       />
       <ShareBadgeModal
         visible={shareModalVisible}
-        badge={selectedBadge}
         onClose={() => setShareModalVisible(false)}
-        onSubmit={(content: string) => {
-          console.log('공유 내용:', content);
-          setShareModalVisible(false);
-          // TODO: 공유 로직 구현
+        onSubmit={(content: string, badge: any, server?: any) => {
+          // 뱃지 데이터 새로고침
+          onBadgeUpdate?.();
+
+          // 성공 메시지 표시
+          Alert.alert('공유 완료!', '뱃지가 성공적으로 공유되었습니다.', [
+            {
+              text: '소셜에서 보기',
+              onPress: () => {
+                // 소셜 페이지로 이동
+                router.push({ pathname: '/(protected)/(tabs)/social' });
+              },
+            },
+            {
+              text: '확인',
+              onPress: () => {
+                setShareModalVisible(false);
+              },
+            },
+          ]);
         }}
       />
 

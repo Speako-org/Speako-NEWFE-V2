@@ -1,4 +1,11 @@
-import { SafeAreaView, View, Text, ScrollView, ActivityIndicator } from 'react-native';
+import {
+  SafeAreaView,
+  View,
+  Text,
+  ScrollView,
+  ActivityIndicator,
+  RefreshControl,
+} from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState, useCallback } from 'react';
 import * as SecureStore from 'expo-secure-store';
@@ -28,6 +35,7 @@ export default function SocialScreen() {
 
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const [userKey] = useState<string>('me');
   const [currentArticleId, setCurrentArticleId] = useState<number | null>(null);
@@ -147,6 +155,12 @@ export default function SocialScreen() {
     run();
   }, [likedSet, userKey, fetchArticles]);
 
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchArticles();
+    setRefreshing(false);
+  }, [fetchArticles]);
+
   const handleToggleLikeLocal = (id: number) => {
     setPosts((prev) =>
       prev.map((p) =>
@@ -164,10 +178,17 @@ export default function SocialScreen() {
     });
   };
 
-  const openComments = (articleId: number) => {
-    setCommentModalVisible(true);
-    setCurrentArticleId(articleId);
-  };
+  const openComments = useCallback(
+    (articleId: number) => {
+      // 상태 업데이트를 한 번에 처리
+      setCurrentArticleId(articleId);
+
+      requestAnimationFrame(() => {
+        setCommentModalVisible(true);
+      });
+    },
+    [setCommentModalVisible]
+  );
   const closeComments = () => {
     setCommentModalVisible(false);
     setCurrentArticleId(null);
@@ -218,7 +239,15 @@ export default function SocialScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         className="flex-1"
-        contentContainerStyle={{ paddingBottom: 100 }}>
+        contentContainerStyle={{ paddingBottom: 100 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#8953E0"
+            colors={['#8953E0']}
+          />
+        }>
         {activeTab === 'feed' && (
           <ArticleList
             posts={posts}

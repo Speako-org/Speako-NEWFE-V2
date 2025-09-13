@@ -169,8 +169,12 @@ export default function Home() {
     if (recording) {
       Animated.loop(
         Animated.sequence([
-          Animated.timing(pulseAnim, { toValue: 1.2, duration: 800, useNativeDriver: true }),
-          Animated.timing(pulseAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
+          Animated.timing(pulseAnim, { toValue: 1.05, duration: 300, useNativeDriver: true }),
+          Animated.timing(pulseAnim, { toValue: 1.15, duration: 300, useNativeDriver: true }),
+          Animated.timing(pulseAnim, { toValue: 1.2, duration: 300, useNativeDriver: true }),
+          Animated.timing(pulseAnim, { toValue: 1.15, duration: 300, useNativeDriver: true }),
+          Animated.timing(pulseAnim, { toValue: 1.05, duration: 300, useNativeDriver: true }),
+          Animated.timing(pulseAnim, { toValue: 1, duration: 300, useNativeDriver: true }),
         ])
       ).start();
     } else {

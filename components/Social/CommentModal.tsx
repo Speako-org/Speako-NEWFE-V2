@@ -157,18 +157,16 @@ export default function CommentModal({
 
       onClose();
 
-      requestAnimationFrame(() => {
-        if (myUserId && targetId && targetId === myUserId) {
-          router.push('/(protected)/(tabs)/my' as any);
-        } else if (targetId) {
-          router.push({
-            pathname: '/(protected)/other-profile/[id]' as any,
-            params: { id: targetId },
-          });
-        } else {
-          Alert.alert('안내', '프로필 정보를 찾을 수 없습니다.');
-        }
-      });
+      if (myUserId && targetId && targetId === myUserId) {
+        router.push('/(protected)/(tabs)/my' as any);
+      } else if (targetId) {
+        router.push({
+          pathname: '/(protected)/other-profile/[id]' as any,
+          params: { id: targetId },
+        });
+      } else {
+        Alert.alert('안내', '프로필 정보를 찾을 수 없습니다.');
+      }
     },
     [router, myUserId, onClose]
   );

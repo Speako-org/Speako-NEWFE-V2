@@ -172,7 +172,6 @@ export default function RecordDate({
                   text: '삭제',
                   style: 'destructive',
                   onPress: () => {
-                    console.log('삭제 버튼 클릭됨, ID:', id);
                     onDeleteRecord(id);
                   },
                 },

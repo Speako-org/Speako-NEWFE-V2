@@ -198,7 +198,7 @@ const Signup: React.FC<SignupScreenProps> = ({ navigation }) => {
                 <Ionicons name="mail-outline" size={20} color="#CECECE" className="mr-2" />
                 <TextInput
                   className="h-[40px] flex-1 px-1 text-[#333]"
-                  placeholder="이메일을 입력하세요 (예: example@example.com)"
+                  placeholder="이메일을 입력하세요"
                   placeholderTextColor="#CECECE"
                   value={formData.email}
                   onChangeText={(text) => handleInputChange('email', text)}
@@ -208,7 +208,7 @@ const Signup: React.FC<SignupScreenProps> = ({ navigation }) => {
               </View>
 
               <View className="flex-row items-center justify-between">
-                <Text className="mb-1 mt-3 text-sm font-medium text-[#333]">비밀번호*</Text>
+                <Text className="mt-3 text-sm font-medium text-[#333]">비밀번호*</Text>
                 {errors.password && <Text className="text-xs text-red-500">{errors.password}</Text>}
               </View>
               <View
@@ -219,7 +219,7 @@ const Signup: React.FC<SignupScreenProps> = ({ navigation }) => {
                 }}>
                 <Ionicons name="lock-closed-outline" size={20} color="#CECECE" className="mr-2" />
                 <TextInput
-                  className="h-[40px] flex-1 px-1 text-[#333]"
+                  className="h-[50px] flex-1 px-1 text-[#333]"
                   placeholder="비밀번호를 입력하세요"
                   placeholderTextColor="#CECECE"
                   secureTextEntry={!showPassword}
@@ -299,7 +299,7 @@ const Signup: React.FC<SignupScreenProps> = ({ navigation }) => {
                 ].map((g) => (
                   <TouchableOpacity
                     key={g.value}
-                    className={`mx-1 mt-2 flex-1 items-center rounded border px-2 py-2 ${
+                    className={`mx-1 mt-2 flex-1 items-center rounded-lg border px-2 py-3 ${
                       formData.gender === g.value ? 'border-[#9491f5]' : 'border-gray-300'
                     }`}
                     onPress={() => handleGenderSelect(g.value)}>
@@ -308,7 +308,7 @@ const Signup: React.FC<SignupScreenProps> = ({ navigation }) => {
                 ))}
               </View>
 
-              <Text className="mb-1 mt-5 text-sm font-medium text-[#333]">나이</Text>
+              <Text className="mb-1 mt-5 text-sm font-medium text-[#333]">나이 (선택)</Text>
               <View
                 className="mb-5 flex-row items-center border-b py-1"
                 style={{

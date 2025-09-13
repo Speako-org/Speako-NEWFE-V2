@@ -46,8 +46,18 @@ const BadgeActionModal = ({
               top: touchPosition.y + 260, // 뱃지 원과 비슷한 높이에 위치
             }}>
             <View
-              className="rounded-2xl border border-gray-100 bg-white px-2 py-3 shadow-md"
-              style={{ minWidth: 280 }}>
+              className="rounded-2xl border border-gray-100 bg-white px-2 py-3"
+              style={{
+                minWidth: 280,
+                shadowColor: '#000',
+                shadowOffset: {
+                  width: 0,
+                  height: 4,
+                },
+                shadowOpacity: 0.25,
+                shadowRadius: 8,
+                elevation: 8,
+              }}>
               {/* Action Buttons */}
               <View className="flex-row items-center justify-between">
                 <TouchableOpacity

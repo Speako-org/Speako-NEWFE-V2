@@ -14,7 +14,7 @@ import {
 import * as WebBrowser from 'expo-web-browser';
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
-import { AntDesign, Feather } from '@expo/vector-icons';
+import { AntDesign, Feather, Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as SecureStore from 'expo-secure-store';
 import GradientText from '../../components/GradientText';
@@ -85,12 +85,10 @@ const LoginScreen = () => {
             localStorage.setItem('accessToken', token);
             sessionStorage.setItem('accessToken', token);
             document.cookie = `accessToken=${token}; path=/; SameSite=None; Secure`;
-            console.log('토큰 저장에 성공하였습니다.');
           } else {
             // 모바일 환경
             try {
               await SecureStore.setItemAsync('accessToken', token);
-              console.log('토큰 저장에 성공하였습니다.');
             } catch (secureStoreError) {
               console.log('SecureStore 오류, localStorage 사용:', secureStoreError);
               // 대안: localStorage 사용
@@ -176,15 +174,20 @@ const LoginScreen = () => {
                   <Text className="text-m mb-3.5 mt-1 font-medium text-gray-800">아이디</Text>
                   {errors.email && <Text className="text-xs text-red-500">{errors.email}</Text>}
                 </View>
-                <View className="mb-8 min-h-[50px] flex-row items-center border-b border-gray-200 pb-2">
-                  <AntDesign name="user" size={20} color="#CECECE" className="mr-2.5" />
+                <View className="mb-8 flex-row items-center border-b border-gray-200 pb-2">
+                  <Ionicons name="person-outline" size={20} color="#CECECE" className="mr-3" />
                   <TextInput
-                    className="flex-1 text-lg text-[#333]"
+                    className="h-[40px] flex-1 text-lg text-[#333]"
                     placeholder="아이디를 입력하세요"
                     placeholderTextColor="#CECECE"
                     value={email}
                     onChangeText={setEmail}
                     autoCapitalize="none"
+                    keyboardType="email-address"
+                    style={{
+                      paddingVertical: 0,
+                      lineHeight: 20,
+                    }}
                   />
                 </View>
                 <View className="flex-row items-center justify-between">
@@ -193,16 +196,20 @@ const LoginScreen = () => {
                     <Text className="text-xs text-red-500">{errors.password}</Text>
                   )}
                 </View>
-                <View className="mb-6 min-h-[50px] flex-row items-center border-b border-gray-200 pb-2">
-                  <AntDesign name="lock" size={20} color="#CECECE" className="mr-2.5" />
+                <View className="mb-6 flex-row items-center border-b border-gray-200 pb-2">
+                  <AntDesign name="lock" size={20} color="#CECECE" className="mr-3" />
                   <TextInput
-                    className="flex-1 text-lg text-[#333]"
+                    className="h-[40px] flex-1 text-lg text-[#333]"
                     placeholder="비밀번호를 입력하세요"
                     placeholderTextColor="#CECECE"
                     value={password}
                     onChangeText={setPassword}
                     secureTextEntry={!showPassword}
                     autoCapitalize="none"
+                    style={{
+                      paddingVertical: 0,
+                      lineHeight: 20,
+                    }}
                   />
                   <TouchableOpacity
                     onPress={() => setShowPassword(!showPassword)}
