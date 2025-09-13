@@ -14,6 +14,7 @@ import { useRef, useState, useEffect } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Audio } from 'expo-av';
 import * as SecureStore from 'expo-secure-store';
+import { useRecordTitleStore } from '~/store/recordTitle';
 
 export type RecordType = {
   id: string;
@@ -54,6 +55,13 @@ export default function RecordDate({
   const formattedSelectedDate = selectedDate.toISOString().split('T')[0];
   const formattedToday = new Date().toISOString().split('T')[0];
   const isToday = formattedSelectedDate === formattedToday;
+  const titles = useRecordTitleStore((s) => s.titles);
+  const setInitial = useRecordTitleStore((s) => s.setInitial);
+
+  useEffect(() => {
+    if (!records?.length) return;
+    setInitial(records.map((r) => ({ id: r.id, title: r.title })));
+  }, [records, setInitial]);
 
   const handleRecordPress = (record: RecordType) => {
     const isCompleted = COMPLETED_STATUSES.includes(record.status);
@@ -183,6 +191,7 @@ export default function RecordDate({
     let swipeRef: Swipeable | null = null;
     const isCompleted = COMPLETED_STATUSES.includes(item.status);
     const inProgress = !isCompleted;
+    const displayedTitle = titles[item.id] ?? item.title;
 
     const badgeText =
       item.status === 'STT_IN_PROGRESS'
@@ -217,7 +226,7 @@ export default function RecordDate({
           disabled={!isCompleted}>
           <View className="my-[8px] mr-[15px] flex-row items-center justify-between py-[15px]">
             <View className="flex-1 flex-row items-center">
-              <Text className="ml-5 flex-1 text-[16px] font-bold">{item.title}</Text>
+              <Text className="ml-5 flex-1 text-[16px] font-bold">{displayedTitle}</Text>
               {!isCompleted && (
                 <View className="ml-1 flex-row items-center rounded-full bg-[#eee] px-1 py-[2px]">
                   <ActivityIndicator size="small" color="#8962c8" />
@@ -233,7 +242,7 @@ export default function RecordDate({
                     e.stopPropagation();
                     onPlayRecordedAudio(item.id);
                   }}
-                  className="mr-3 h-8 w-8 items-center justify-center rounded-full bg-[#8962c8]">
+                  className="mr-2.5 h-8 w-8 items-center justify-center rounded-full bg-[#8962c8] pl-0.5">
                   <Ionicons
                     name={playingStates.get(item.id) ? 'pause' : 'play'}
                     size={16}
@@ -241,7 +250,7 @@ export default function RecordDate({
                   />
                 </TouchableOpacity>
               )}
-              <Text className="mr-2 text-[14px] text-[#777]">{item.duration}</Text>
+              <Text className="ml-1 w-[45px] text-[14px] text-[#777]">{item.duration}</Text>
             </View>
           </View>
 
