@@ -6,7 +6,7 @@ import {
   ActivityIndicator,
   RefreshControl,
 } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { useEffect, useState, useCallback } from 'react';
 import * as SecureStore from 'expo-secure-store';
 import dayjs from 'dayjs';
@@ -36,6 +36,7 @@ export default function SocialScreen() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [imgVersion, setImgVersion] = useState<number>(0);
 
   const [userKey] = useState<string>('me');
   const [currentArticleId, setCurrentArticleId] = useState<number | null>(null);
@@ -79,85 +80,102 @@ export default function SocialScreen() {
     })();
   }, []);
 
-  const fetchArticles = useCallback(async () => {
-    setLoading(true);
-    try {
-      const accessToken = await SecureStore.getItemAsync('accessToken');
-      const res = await fetch('https://speako.site/api/articles/list?size=10', {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
-      const data = await res.json();
-
-      if (data.isSuccess) {
-        const mappedPosts: Post[] = data.result.content.map((item: any) => {
-          const id = Number(item.articleId);
-          const formattedTime = item.createdAt
-            ? dayjs(item.createdAt).format('YYYY-MM-DD HH:mm')
-            : '날짜 없음';
-
-          const serverLiked = !!(
-            item.isLiked ??
-            item.liked ??
-            item.likedByMe ??
-            item.isLikedByMe ??
-            false
-          );
-          const isLiked = likedSet.has(id) || serverLiked;
-
-          return {
-            id,
-            userId: Number(item.userId),
-            userName: item.username,
-            timeAgo: formattedTime,
-            content: item.content,
-            likes: item.likedNum,
-            comments: item.commentNum,
-            isLiked,
-            ImageType: item.ImageType ?? null,
-            badge: {
-              icon: item.icon,
-              title: item.badgeTitle,
-              description: item.badgeDescription,
-              createdAt: item.createdAt,
-            },
-          } as Post;
+  const fetchArticles = useCallback(
+    async (version?: number) => {
+      setLoading(true);
+      try {
+        const accessToken = await SecureStore.getItemAsync('accessToken');
+        const res = await fetch('https://speako.site/api/articles/list?size=10', {
+          headers: { Authorization: `Bearer ${accessToken}` },
         });
+        const data = await res.json();
 
-        setPosts((prev) => {
-          const prevMap = new Map(prev.map((p) => [p.id, p]));
-          return mappedPosts.map((m) => {
-            const old = prevMap.get(m.id);
-            return old ? { ...m, likes: old.likes } : m;
+        if (data.isSuccess) {
+          const mappedPosts: Post[] = data.result.content.map((item: any) => {
+            const id = Number(item.articleId);
+            const formattedTime = item.createdAt
+              ? dayjs(item.createdAt).format('YYYY-MM-DD HH:mm')
+              : '날짜 없음';
+
+            const serverLiked = !!(
+              item.isLiked ??
+              item.liked ??
+              item.likedByMe ??
+              item.isLikedByMe ??
+              false
+            );
+            const isLiked = likedSet.has(id) || serverLiked;
+
+            const rawImg = item.ImageType ?? null;
+            const v = version ?? 0;
+            const imageWithVersion = rawImg
+              ? `${rawImg}${rawImg.includes('?') ? '&' : '?'}v=${v}`
+              : null;
+
+            return {
+              id,
+              userId: Number(item.userId),
+              userName: item.username,
+              timeAgo: formattedTime,
+              content: item.content,
+              likes: item.likedNum,
+              comments: item.commentNum,
+              isLiked,
+              ImageType: imageWithVersion,
+              badge: {
+                icon: item.icon,
+                title: item.badgeTitle,
+                description: item.badgeDescription,
+                createdAt: item.createdAt,
+              },
+            } as Post;
           });
-        });
 
-        const mustAdd = mappedPosts
-          .filter((p) => p.isLiked && !likedSet.has(p.id))
-          .map((p) => p.id);
-        if (mustAdd.length > 0) {
-          const next = new Set(likedSet);
-          mustAdd.forEach((id) => next.add(id));
-          setLikedSet(next);
-          saveLikedSet(userKey, next);
+          setPosts((prev) => {
+            const prevMap = new Map(prev.map((p) => [p.id, p]));
+            return mappedPosts.map((m) => {
+              const old = prevMap.get(m.id);
+              return old ? { ...m, likes: old.likes } : m;
+            });
+          });
+
+          const mustAdd = mappedPosts
+            .filter((p) => p.isLiked && !likedSet.has(p.id))
+            .map((p) => p.id);
+          if (mustAdd.length > 0) {
+            const next = new Set(likedSet);
+            mustAdd.forEach((id) => next.add(id));
+            setLikedSet(next);
+            saveLikedSet(userKey, next);
+          }
         }
+      } catch (e) {
+        console.error('게시글 조회 에러:', e);
+      } finally {
+        setLoading(false);
       }
-    } catch (e) {
-      console.error('게시글 조회 에러:', e);
-    } finally {
-      setLoading(false);
-    }
-  }, [likedSet, userKey]);
+    },
+    [likedSet, userKey]
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      const v = Date.now();
+      setImgVersion(v);
+      fetchArticles(v);
+    }, [fetchArticles])
+  );
 
   useEffect(() => {
     const run = async () => {
-      await fetchArticles();
+      await fetchArticles(Date.now());
     };
     run();
   }, [likedSet, userKey, fetchArticles]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await fetchArticles();
+    await fetchArticles(Date.now());
     setRefreshing(false);
   }, [fetchArticles]);
 

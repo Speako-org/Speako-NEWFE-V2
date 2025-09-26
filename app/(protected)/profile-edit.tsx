@@ -13,6 +13,8 @@ import { useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
 import { apiClient } from '../../api/client';
 import { myPageApi, Achievement as AchievementType, Achievement } from '../../api/types/statistic';
+import * as SecureStore from 'expo-secure-store';
+import { useAvatarVersion } from '~/store/useAvatar';
 
 const ProfileEdit = () => {
   const router = useRouter();
@@ -113,14 +115,15 @@ const ProfileEdit = () => {
 
       // 프로필 이미지 update API 호출
       if (selectedAvatar !== null) {
-        const imageResponse = await apiClient.updateProfileImage(selectedAvatar.toString());
+        const imageResponse = await apiClient.updateProfileImage(String(selectedAvatar));
         if (imageResponse.isSuccess) {
-          console.log('프로필 이미지 업데이트 성공');
-
           updatedProfileData = {
             ...updatedProfileData,
             profileImageUrl: imageResponse.result.newImageTypeUrl,
           };
+
+          const uid = await SecureStore.getItemAsync('userId');
+          if (uid) useAvatarVersion.getState().bump(uid);
         }
       }
 
@@ -163,9 +166,11 @@ const ProfileEdit = () => {
           <View className="relative">
             <Image
               source={
-                profileData?.profileImageUrl
-                  ? { uri: profileData.profileImageUrl }
-                  : require('../../assets/default-profile.png')
+                selectedAvatar !== null
+                  ? getAvatarSource(selectedAvatar)
+                  : profileData?.profileImageUrl
+                    ? { uri: profileData.profileImageUrl }
+                    : require('../../assets/default-profile.png')
               }
               className="h-24 w-24 rounded-full"
               resizeMode="cover"
@@ -180,8 +185,8 @@ const ProfileEdit = () => {
         </View>
 
         {/* 닉네임 입력 */}
-        <View className="mb-4">
-          <Text className="mb-2 text-sm font-semibold text-gray-700">닉네임</Text>
+        <View className="mb-8">
+          <Text className="text-base font-bold text-gray-700">닉네임</Text>
           <TextInput
             className="border-b border-gray-300 px-0 py-3 text-base"
             placeholder="닉네임을 입력하세요"
@@ -193,7 +198,7 @@ const ProfileEdit = () => {
 
         {/* 소개글 입력 */}
         <View className="mb-6">
-          <Text className="mb-2 text-sm font-semibold text-gray-700">소개글</Text>
+          <Text className="text-base font-bold text-gray-700">소개글</Text>
           <TextInput
             className="border-b border-gray-300 px-0 py-3 text-base"
             placeholder="소개글을 입력하세요"
@@ -274,7 +279,9 @@ const ProfileEdit = () => {
 
             {/* 완료 버튼 */}
             <TouchableOpacity
-              onPress={() => setShowImagePickerModal(false)}
+              onPress={async () => {
+                setShowImagePickerModal(false);
+              }}
               disabled={selectedAvatar === null}
               style={{
                 borderRadius: 10,

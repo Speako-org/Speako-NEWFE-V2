@@ -2,6 +2,16 @@ import { getApiConfig } from './config';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
+type UpdateProfileImageRes = {
+  isSuccess: boolean;
+  code: string;
+  message: string;
+  result: {
+    userId: number;
+    newImageTypeUrl: string;
+  };
+};
+
 const config = getApiConfig();
 
 // 토큰 가져오기 함수
@@ -133,15 +143,8 @@ export const apiClient = {
   },
 
   // 프로필 이미지 업데이트 API
-  async updateProfileImage(newImageName: string): Promise<{
-    isSuccess: boolean;
-    code: string;
-    message: string;
-    result: {
-      userId: number;
-      newImageTypeUrl: string;
-    };
-  }> {
-    return this.patch(`/api/users/image?newImageName=${encodeURIComponent(newImageName)}`);
+  async updateProfileImage(newImageNumber: string): Promise<UpdateProfileImageRes> {
+    const url = `/api/users/image?newImageNumber=${encodeURIComponent(newImageNumber)}`;
+    return this.patch(url);
   },
 };

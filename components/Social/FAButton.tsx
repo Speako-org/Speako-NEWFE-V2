@@ -8,10 +8,10 @@ interface FAButtonProps {
 export default function FAButton({ onPress }: FAButtonProps) {
   return (
     <TouchableOpacity
-      className="absolute bottom-40 right-9 items-center justify-center rounded-full border border-gray-200 bg-white"
+      className="absolute bottom-36 right-7 items-center justify-center rounded-full border border-gray-200 bg-white"
       style={{
-        width: 72,
-        height: 72,
+        width: 62,
+        height: 62,
         shadowColor: '#000',
         shadowOffset: {
           width: 0,
@@ -22,7 +22,7 @@ export default function FAButton({ onPress }: FAButtonProps) {
         elevation: 6,
       }}
       onPress={onPress}>
-      <Octicons name="pencil" size={32} color="#8953E0" />
+      <Octicons name="pencil" size={28} color="#8953E0" />
     </TouchableOpacity>
   );
 }

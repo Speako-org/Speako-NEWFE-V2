@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { likeArticle, unlikeArticle } from '~/api/articles';
 import { useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
+import { useAvatarVersion } from '~/store/useAvatar';
 
 export interface Post {
   id: number;
@@ -83,17 +84,21 @@ export default function PostCard({
     }
   };
 
+  const ver = useAvatarVersion((s) => s.get(post.userId));
+  const uri = post?.ImageType
+    ? `${post.ImageType}${post.ImageType.includes('?') ? '&' : '?'}v=${ver}`
+    : null;
+
   return (
     <View className="mx-4 mb-4 rounded-2xl border border-gray-200 bg-white px-5 pb-5 pt-6">
       {/* 유저 정보 */}
       <View className="mb-4 mt-1 flex-row items-center">
         <TouchableOpacity onPress={handleNavigateToProfile}>
           <Image
-            source={
-              post?.ImageType ? { uri: post.ImageType } : require('~/assets/default-profile.png')
-            }
+            source={uri ? { uri } : require('~/assets/default-profile.png')}
             className="mr-3 h-12 w-12 rounded-full"
             resizeMode="cover"
+            key={`${post.userId}:${ver}`}
           />
         </TouchableOpacity>
 

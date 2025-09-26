@@ -20,6 +20,7 @@ import {
   MonthlyStat,
 } from '../../../api/types/statistic';
 import * as SecureStore from 'expo-secure-store';
+import { useAvatarVersion } from '~/store/useAvatar';
 
 const Mypage = () => {
   const router = useRouter();
@@ -33,6 +34,7 @@ const Mypage = () => {
   const [showMonthlyStatsModal, setShowMonthlyStatsModal] = useState(false);
   const [showEmotionChartModal, setShowEmotionChartModal] = useState(false);
   const [modalPosition, setModalPosition] = useState({ x: 0, y: 0 });
+  const [imgVersion, setImgVersion] = useState<number>(Date.now());
 
   const fetchProfile = async (uid: string) => {
     setErrorMsg(null);
@@ -72,10 +74,16 @@ const Mypage = () => {
   useFocusEffect(
     React.useCallback(() => {
       if (userId && !booting) {
-        fetchProfile(userId);
+        fetchProfile(userId).finally(() => {
+          setImgVersion(Date.now());
+        });
       }
     }, [userId, booting])
   );
+
+  const v = useAvatarVersion((s) => s.get(userId ?? ''));
+  const rawUrl = profileData?.profileImageUrl ?? null;
+  const imgUri = rawUrl ? `${rawUrl}${rawUrl.includes('?') ? '&' : '?'}v=${v}` : null;
 
   if (booting) {
     return (
@@ -204,14 +212,12 @@ const Mypage = () => {
           {/* Profile Info */}
           <View className="mb-5 flex-row items-center">
             <Image
-              source={
-                profileData?.profileImageUrl
-                  ? { uri: profileData.profileImageUrl }
-                  : require('../../../assets/default-profile.png')
-              }
+              source={imgUri ? { uri: imgUri } : require('../../../assets/default-profile.png')}
               className="mr-[15px] mt-3 h-[60px] w-[60px] rounded-full"
               resizeMode="cover"
+              key={`${userId}:${v}`}
             />
+
             <View className="flex-1">
               <View className="mb-2 flex-row items-center justify-between">
                 <View className="flex-row items-center">
