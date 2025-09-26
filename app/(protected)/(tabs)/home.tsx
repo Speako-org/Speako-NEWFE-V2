@@ -231,83 +231,78 @@ export default function Home() {
       </View>
 
       <View
-        className="elevation-4 shadow-xs relative z-20 mb-[80px] h-[150px] w-[85%] items-center justify-center rounded-[20px] bg-transparent px-[30px]"
+        className="elevation-4 shadow-xs relative z-20 mb-[80px] h-[150px] w-[85%] rounded-[20px] bg-transparent"
         style={{ marginTop: '10%' }}>
+        {/* 타이머 */}
         {recording && (
-          <View className="absolute z-[-1] h-full w-full rounded-[10px] bg-transparent" />
-        )}
-
-        {recording && (
-          <Text className="absolute right-[18px] mb-[220px] text-[15px] text-[#303030]">
+          <Text
+            style={{ position: 'absolute', top: 10, right: 23, zIndex: 2 }}
+            className="text-[15px] text-[#afafaf]">
             {`${formatTime(recordTime)} / 01:00:00`}
           </Text>
         )}
 
-        {recording ? (
-          <TouchableOpacity
-            onPress={() => {
-              Alert.alert('녹음 종료', '녹음을 종료하시겠어요?', [
-                {
-                  text: '취소',
-                  style: 'cancel',
-                },
-                {
-                  text: '종료',
-                  onPress: onStopRecord,
-                },
-              ]);
-            }}
-            className="items-center">
-            <Animated.Image
-              source={require('../../../assets/recording_on_button.png')}
-              style={{
-                marginRight: 12,
-                width: 80,
-                height: 80,
-                resizeMode: 'contain',
-                transform: [{ scale: pulseAnim }],
+        <View
+          style={{
+            position: 'absolute',
+            left: 10,
+            right: 10,
+            top: -10,
+            borderWidth: 4,
+            borderColor: recording ? '#85858541' : '#d4d4d459',
+            borderRadius: 20,
+            alignItems: 'center',
+            justifyContent: 'center',
+            paddingVertical: 60,
+          }}>
+          {recording ? (
+            <TouchableOpacity
+              onPress={() => {
+                Alert.alert('녹음 종료', '녹음을 종료하시겠어요?', [
+                  { text: '취소', style: 'cancel' },
+                  { text: '종료', onPress: onStopRecord },
+                ]);
               }}
-            />
-            <Text
-              className="mt-8 text-[18px] font-semibold text-[#a7a7a7]"
-              style={{
-                shadowColor: '#000',
-                shadowOpacity: 0.5,
-                shadowOffset: { width: 0, height: 1 },
-                shadowRadius: 2,
-                elevation: 2,
-              }}>
-              녹음중
-            </Text>
-          </TouchableOpacity>
-        ) : (
-          <RecordButton
-            recording={!!recordingInstance}
-            onStartRecord={onStartRecord}
-            onStopRecord={onStopRecord}
-          />
-        )}
-
-        {recording ? (
-          <View className="mt-[10px] items-center">
-            <Text
-              className="mt-2 text-[17px] font-medium tracking-[0.5px]"
-              style={{
-                shadowColor: '#000',
-                shadowOpacity: 0.1,
-                shadowOffset: { width: 0, height: 1 },
-                shadowRadius: 2,
-                elevation: 2,
-                color: '#a7a7a7',
-                opacity: 0.8,
-              }}>
-              한번 더 누를 시 녹음이 종료돼요!
-            </Text>
-          </View>
-        ) : null}
+              activeOpacity={0.9}>
+              <Animated.Image
+                source={require('../../../assets/recording_on_button.png')}
+                style={{
+                  width: 80,
+                  height: 80,
+                  resizeMode: 'contain',
+                  transform: [{ scale: pulseAnim }],
+                }}
+              />
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity onPress={onStartRecord} activeOpacity={0.9}>
+              <RecordButton
+                recording={recording}
+                onStartRecord={onStartRecord}
+                onStopRecord={onStopRecord}
+              />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
-      <View className="absolute bottom-[140px] left-0 right-0 px-6">
+      <View className="mt-[10px] items-center">
+        <Text
+          className="mt-2 text-[17px] font-medium tracking-[0.5px]"
+          style={{
+            shadowColor: '#000',
+            shadowOpacity: 0.1,
+            shadowOffset: { width: 0, height: 1 },
+            shadowRadius: 2,
+            elevation: 2,
+            color: '#a7a7a7',
+            opacity: 0.9,
+          }}>
+          {recording ? '한 번 더 누르면 녹음이 종료돼요!' : '탭하여 녹음을 시작하세요'}
+        </Text>
+      </View>
+
+      <View className="absolute bottom-[140px] left-0 right-0 px-12">
         {recordedUri && (
           <Text className="mb-4 text-center text-sm text-gray-500">
             * 업로드를 하면 기록 탭에서 분석이 시작돼요
@@ -318,8 +313,8 @@ export default function Home() {
             <TouchableOpacity
               onPress={onPlayRecordedAudio}
               disabled={!recordedUri}
-              className={`mr-4 items-center justify-center rounded-xl px-6 py-4 shadow-lg ${
-                recordedUri ? 'bg-[#B88FEA]' : 'bg-gray-300'
+              className={`mr-4 items-center justify-center rounded-xl px-6 py-3.5 shadow-lg ${
+                recordedUri ? 'bg-[#b88fea59]' : 'bg-gray-300'
               }`}
               style={{
                 elevation: 4,

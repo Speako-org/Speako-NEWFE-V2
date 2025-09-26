@@ -153,8 +153,8 @@ export default function UploadTranscribeButton({
     <TouchableOpacity
       onPress={onPress}
       disabled={!recordedUri || isUploading}
-      className={`items-center justify-center rounded-xl px-6 py-4 shadow-lg ${
-        !recordedUri || isUploading ? 'bg-gray-300' : 'bg-[#7BB0F7]'
+      className={`items-center justify-center rounded-xl px-4 py-4 shadow-lg ${
+        !recordedUri || isUploading ? 'bg-gray-300' : 'bg-[#7bb1f75d]'
       }`}
       style={{
         elevation: 4,
